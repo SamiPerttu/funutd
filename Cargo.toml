@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 num-traits = "0.2.12"
+wrapping_arithmetic = "0.1.0"
