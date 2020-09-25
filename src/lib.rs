@@ -7,3 +7,5 @@ mod tests {
 }
 
 pub mod prelude;
+pub mod vec;
+pub mod map4;
