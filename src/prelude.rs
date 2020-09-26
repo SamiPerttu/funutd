@@ -1,4 +1,3 @@
-use num_traits::AsPrimitive;
 use std::ops::{Add, Sub, Mul, Div};
 use std::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};
 use wrapping_arithmetic::wrappit;
@@ -154,19 +153,72 @@ macro_rules! impl_real {
 }
 impl_real! { f32, f64 }
 
-pub const SQRT_2: f64 = std::f64::consts::SQRT_2;
-pub const E: f64 = std::f64::consts::E;
-pub const PI: f64 = std::f64::consts::PI;
-pub const TAU: f64 = std::f64::consts::TAU;
+pub trait AsPrimitive<T: Copy>: Copy
+{
+    /// Convert a value using the as operator.
+    fn as_(self) -> T;
+}
+
+macro_rules! impl_as_primitive {
+    (@ $T: ty => $(#[$cfg:meta])* impl $U: ty ) => {
+        $(#[$cfg])*
+        impl AsPrimitive<$U> for $T {
+            #[inline] fn as_(self) -> $U { self as $U }
+        }
+    };
+    (@ $T: ty => { $( $U: ty ),* } ) => {$(
+        impl_as_primitive!(@ $T => impl $U);
+    )*};
+    ($T: ty => { $( $U: ty ),* } ) => {
+        impl_as_primitive!(@ $T => { $( $U ),* });
+        impl_as_primitive!(@ $T => { u8, u16, u32, u64, u128, usize });
+        impl_as_primitive!(@ $T => { i8, i16, i32, i64, i128, isize });
+    };
+}
+
+impl_as_primitive!(u8 => { char, f32, f64 });
+impl_as_primitive!(i8 => { f32, f64 });
+impl_as_primitive!(u16 => { f32, f64 });
+impl_as_primitive!(i16 => { f32, f64 });
+impl_as_primitive!(u32 => { f32, f64 });
+impl_as_primitive!(i32 => { f32, f64 });
+impl_as_primitive!(u64 => { f32, f64 });
+impl_as_primitive!(i64 => { f32, f64 });
+impl_as_primitive!(u128 => { f32, f64 });
+impl_as_primitive!(i128 => { f32, f64 });
+impl_as_primitive!(usize => { f32, f64 });
+impl_as_primitive!(isize => { f32, f64 });
+impl_as_primitive!(f32 => { f32, f64 });
+impl_as_primitive!(f64 => { f32, f64 });
+impl_as_primitive!(char => { char });
+impl_as_primitive!(bool => {});
 
 /// Cast between primitive types.
-#[inline] pub fn cast<T : AsPrimitive<U>, U : Copy + 'static>(t: T) -> U { t.as_() }
+#[inline] pub fn cast<T: AsPrimitive<U>, U: Copy>(t: T) -> U { t.as_() }
 
-/// Clamps x between min and max.
-#[inline] pub fn clamp<T: Num>(min: T, max: T, x: T) -> T { x.max(min).min(max) }
+/// sqrt(2)
+pub const SQRT_2: f64 = std::f64::consts::SQRT_2;
+/// e (Euler's constant)
+pub const E: f64 = std::f64::consts::E;
+/// pi
+pub const PI: f64 = std::f64::consts::PI;
+/// tau = 2 * pi
+pub const TAU: f64 = std::f64::consts::TAU;
+
+/// Minimum of 3 items.
+#[inline] pub fn min3<T: Num>(x: T, y: T, z: T) -> T { x.min(y).min(z) }
+
+/// Maximum of 3 items.
+#[inline] pub fn max3<T: Num>(x: T, y: T, z: T) -> T { x.max(y).max(z) }
+
+/// Clamps x between x0 and x1.
+#[inline] pub fn clamp<T: Num>(x0: T, x1: T, x: T) -> T { x.max(x0).min(x1) }
 
 /// Clamps x between 0 and 1.
 #[inline] pub fn clamp01<T: Num>(x: T) -> T { x.max(T::zero()).min(T::one()) }
+
+/// Clamps x between -1 and 1.
+#[inline] pub fn clamp11<T: Num>(x: T) -> T { x.max(T::new(-1)).min(T::one()) }
 
 pub trait Lerp<T> {
     fn lerp(self, other: Self, t: T) -> Self;
@@ -178,26 +230,36 @@ impl<U, T> Lerp<T> for U where U: Add<Output = U> + Mul<T, Output = U>, T: Num {
     }
 }
 
-#[inline] pub fn lerp<U: Lerp<T>, T>(a: U, b: U, t: T) -> U { a.lerp(b, t) }
+#[inline] pub fn lerp<U: Lerp<T>, T>(a: U, b: U, t: T) -> U {
+    a.lerp(b, t)
+}
 
-#[inline] pub fn lerp01<U: Lerp<T>, T: Num>(a: U, b: U, t: T) -> U { lerp(a, b, clamp01(t)) }
+#[inline] pub fn delerp<T: Num>(a: T, b: T, x: T) -> T {
+    (x - a) / (b - a)
+}
 
-#[inline] pub fn delerp<T: Num>(a: T, b: T, x: T) -> T { (x - a) / (b - a) }
+#[inline] pub fn xerp<U: Lerp<T> + Real, T>(a: U, b: U, t: T) -> U {
+    exp(lerp(log(a), log(b), t))
+}
 
-#[inline] pub fn xerp<U: Lerp<T> + Real, T>(a: U, b: U, t: T) -> U { exp(lerp(log(a), log(b), t)) }
-
-#[inline] pub fn xerp01<U: Lerp<T> + Real, T: Num>(a: U, b: U, t: T) -> U { exp(lerp(log(a), log(b), clamp01(t))) }
-
-#[inline] pub fn dexerp<T: Num + Real>(a: T, b: T, x: T) -> T { log(x / a) / log(b / a) }
+#[inline] pub fn dexerp<T: Num + Real>(a: T, b: T, x: T) -> T {
+    log(x / a) / log(b / a)
+}
 
 /// Rounds to a multiple of step.
-#[inline] pub fn discretize<T: Num>(x: T, step: T) -> T { (x / step).round() * step }
+#[inline] pub fn discretize<T: Num>(x: T, step: T) -> T {
+    (x / step).round() * step
+}
 
 /// Square of x.
-#[inline] pub fn squared<T: Mul<Output = T> + Copy>(x: T) -> T { x * x }
+#[inline] pub fn squared<T: Mul<Output = T> + Copy>(x: T) -> T {
+    x * x
+}
 
 /// Cube of x.
-#[inline] pub fn cubed<T: Mul<Output = T> + Copy>(x: T) -> T { x * x * x }
+#[inline] pub fn cubed<T: Mul<Output = T> + Copy>(x: T) -> T {
+    x * x * x
+}
 
 /// Smooth cubic fade curve.
 #[inline] pub fn smooth3<T: Num>(x: T) -> T {
@@ -236,14 +298,17 @@ impl<U, T> Lerp<T> for U where U: Add<Output = U> + Mul<T, Output = U>, T: Num {
     sqrt(max(T::new(0), (T::new(2) - x) * x))
 }
 
-/// Piecewise polynomial, symmetric wave function with period 4.
-#[inline] pub fn polywave<T: Num>(x: T) -> T {
+/// Wave function stitched together from two symmetric pieces peaking at origin.
+#[inline] pub fn wave<T: Num, F: Fn(T) -> T>(f: F, x: T) -> T {
     let u = (x - T::one()) / T::new(4);
     let u = (u - u.floor()) * T::new(2);
     let w0 = u.min(T::one());
     let w1 = u - w0;
-    T::one() - (smooth3(w0) - smooth3(w1)) * T::new(2)
+    T::one() - (f(w0) - f(w1)) * T::new(2)
 }
+
+#[inline] pub fn wave3<T: Num>(x: T) -> T { wave(smooth3, x) }
+#[inline] pub fn wave5<T: Num>(x: T) -> T { wave(smooth5, x) }
 
 /// Catmull-Rom cubic spline interpolation, which is a form of cubic Hermite spline. Interpolates between
 /// y1 (returns y1 when x = 0) and y2 (returns y2 when x = 1) while using the previous (y0) and next (y3)
@@ -259,8 +324,8 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
   let d0 = y1 - y0;
   let d1 = y2 - y1;
   let d2 = y3 - y2;
-  let d1d = (d0.sign() + d1.sign()) * (d0 + d1).min(d0.abs().min(d1.abs()));
-  let d2d = (d1.sign() + d2.sign()) * (d1 + d2).min(d1.abs().min(d2.abs()));
+  let d1d = (sign(d0) + sign(d1)) * min3(d0 + d1, abs(d0), abs(d1));
+  let d2d = (sign(d1) + sign(d2)) * min3(d1 + d2, abs(d1), abs(d2));
   cubed(x) * (T::new(2) * y1 - T::new(2) * y2 + d1d + d2d) + squared(x) * (T::new(-3) * y1 + T::new(3) * y2 - T::new(2) * d1d - d2d) + x * d1d + y1
 }
 
@@ -285,7 +350,7 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
     T::one() / squared(T::one() + x.abs())
 }
 
-/// This exp-like, smooth response function is second order continuous.
+/// This exp-like response function is second order continuous.
 /// It has asymmetrical magnitude curves: (inverse) linear when x < 0 and quadratic when x > 0.
 /// f(x) >= 0 for all x. Like the exponential function, f(0) = f'(0) = 1.
 #[inline] pub fn exq<T: Num>(x: T) -> T {
@@ -324,7 +389,7 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
     x ^ (x >> 1)
 }
 
-/// Quadratic probe. This is a bijective function.
+/// Quadratic probe. This is a bijective function in unsigned types.
 #[wrappit] #[inline] pub fn quadp<T: Int>(x: T) -> T {
     let q = x >> 1;
     (x & T::one()) + q + q * q
@@ -463,4 +528,25 @@ pub fn hashm(x: u128) -> u64 {
     let a = a ^ (a >> 47);
     let a = (a ^ x as u64) * C;
     (a ^ (a >> 47)) * C
+}
+
+/// 64-bit hash from FarmHash by Geoff Pike and Jyrki Alakuijala.
+#[wrappit] #[inline] 
+pub fn hashn(x: u64) -> u64 {
+    const C: u64 = 0x9ddfea08eb382d69;
+    let x = x * C;
+    let x = (x ^ (x >> 44)) * C;
+    (x ^ (x >> 41)) * C
+}
+
+/// 128-to-64-bit hash from FarmHash by Geoff Pike and Jyrki Alakuijala.
+#[wrappit] #[inline] 
+pub fn hashp(x: u128) -> u64 {
+    const C: u64 = 0x9ddfea08eb382d69;
+    let y = (x >> 64) as u64;
+    let a = (x as u64 ^ y) * C;
+    let a = (y ^ a ^ (a >> 47)) * C;
+    let a = (a ^ (a >> 44)) * C;
+    let a = (a ^ (a >> 41)) * C;
+    a
 }

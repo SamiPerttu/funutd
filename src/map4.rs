@@ -3,6 +3,7 @@ use glam::*;
 use wrapping_arithmetic::wrappit;
 
 #[inline] pub fn frc(x: u64) -> f32 { (x & 0xff) as f32 }
+#[inline] pub fn grc(x: u64) -> f32 { (x & 0xff) as f32 }
 #[inline] pub fn src(x: u64) -> f32 { (x & 0xff) as f32 }
 
 pub struct Basis3 {
@@ -21,11 +22,15 @@ impl Basis3 {
     #[wrappit] pub fn hash_y(&self, current: u64, dy: i32) -> u64 { hashd(current ^ (self.iy + dy as u32) as u64) }
     #[wrappit] pub fn hash_xy(&self, current: u64, dx: i32, dy: i32) -> u64 { hashd(current ^ ((self.ix + dx as u32) as u64) ^ (((self.iy + dy as u32) as u64) << 32)) }
     #[wrappit] pub fn hash_z(&self, current: u64, dz: i32) -> u64 { hashc(current ^ (self.iz + dz as u32) as u64) }
-    #[inline] pub fn point(&self, h: u64, offset: Vec3A) -> Vec3A {
-        offset + vec3a(frc(h) as f32, frc(h >> 8) as f32, frc(h >> 16) as f32) * (1.0 / 256.0)
+
+    #[inline] pub fn point(&self, h: u64) -> Vec3A {
+        vec3a(frc(h) as f32, frc(h >> 8) as f32, frc(h >> 16) as f32) * (1.0 / 256.0)
+    }
+    #[inline] pub fn gradient(&self, h: u64) -> Vec3A {
+        vec3a(grc(h) as f32, grc(h >> 8) as f32, grc(h >> 16) as f32) * (2.0 / 255.0) - Vec3A::one()
     }
     #[inline] pub fn color(&self, h: u64) -> Vec4 {
-        vec4(src(h) as f32, src(h >> 8) as f32, src(h >> 16) as f32, src(h >> 24) as f32) * (2.0 / 255.0) - Vec4::splat(1.0)
+        vec4(src(h) as f32, src(h >> 8) as f32, src(h >> 16) as f32, src(h >> 24) as f32) * (2.0 / 255.0) - Vec4::one()
     }
 }
 
@@ -35,6 +40,7 @@ pub fn noise3(v: Vec4) -> Vec4 {
     for dx in -1 ..= 1 {
         for dy in -1 ..= 1 {
             let hxy = basis.hash_xy(0, dx, dy);
+            let mut offset = Vec3A::new(dx as f32, dy as f32, 0.0) - basis.d;
             for dz in -1 ..= 1 {
                 let mut h = basis.hash_z(hxy, dz);
                 // Pick number of cells as a rough approximation to a Poisson distribution.
@@ -43,14 +49,15 @@ pub fn noise3(v: Vec4) -> Vec4 {
                 let n = 1 + (h & 1);
                 //let n = match h & 7 { 0 | 1 | 2 | 3 => 1, 5 | 6 => 2, 7 | _ => 3 };
                 //let n = match h & 7 { 0 | 1 | 2 => 1, 3 | 4 | 5 => 2, 6 | 7 | _ => 3 };
-                let offset = Vec3A::new(dx as f32, dy as f32, dz as f32);
+                offset.set_z(dz as f32 - basis.d.z());
+                //let offset = Vec3A::new(dx as f32, dy as f32, dz as f32) - basis.d;
                 for di in 0 .. n {
-                    let p = basis.point(h >> 8, offset);
-                    let D: f32 = (basis.d - p).length();
+                    let p = basis.point(h >> 8);
+                    let D: f32 = (p + offset).length_squared();
                     //let M: f32 = 0.8 + ((h >> 3) & 31) as f32 * (0.2 / 31.0);
-                    let M: f32 = 1.0 - squared(((h >> 3) & 31) as f32 / 31.0) * (15.0 / 31.0);
-                    if D < M {
-                        let D = D / M;
+                    let M: f32 = 1.0 - (((h >> 3) & 31) as f32 / 31.0) * (15.0 / 31.0);
+                    if D < M * M {
+                        let D = sqrt(D) / M;
                         let C = basis.color(h >> 32);
                         //let blend = cos(D * PI as f32) * 0.5 + 0.5;
                         let blend = 1.0 - smooth3(D);
@@ -75,7 +82,7 @@ pub fn rotate(amount: f32, v: Vec4, u: Vec4) -> Vec4 {
         let v3 = Quat::from_axis_angle(axis.into(), amount * length) * w;
         v3.extend(v.w())
     } else {
-        Vec4::zero()
+        Vec3A::zero().extend(v.w())
     }
 }
 
@@ -87,7 +94,7 @@ pub fn softmix4(amount: f32, v: Vec4, u: Vec4) -> Vec4 {
 }
 
 pub fn reflect(amount: f32, v: Vec4) -> Vec4 {
-    polywave(v * amount)
+    wave(smooth3, v * amount)
 }
 
 pub fn reflect4(amount: f32, v: Vec4) -> Vec4 {
@@ -107,9 +114,7 @@ pub fn overdrive(amount: f32, v: Vec4) -> Vec4 {
 /// Saturates the input while retaining component proportions (amount > 0).
 pub fn overdrive4(amount: f32, v: Vec4) -> Vec4 {
     // Use the 8-norm as a smooth proxy for the largest magnitude component.
-    let b = v * v;
-    let b = b * b;
-    let m = b.length();
+    let m = squared(squared(v)).length();
     
     if m > 0.0 {
         let m = sqrt(sqrt(m));
