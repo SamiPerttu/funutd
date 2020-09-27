@@ -442,7 +442,7 @@ pub fn hashb(x: u32) -> u32 {
     x ^ (x >> 16)
 }
 
-/// 64-bit hash SplitMix64 by Sebastiano Vigna.
+/// 64-bit hash from SplitMix64 by Sebastiano Vigna.
 #[wrappit] #[inline] 
 pub fn hashc(x: u64) -> u64 {
     let x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
@@ -549,4 +549,22 @@ pub fn hashp(x: u128) -> u64 {
     let a = (a ^ (a >> 44)) * C;
     let a = (a ^ (a >> 41)) * C;
     a
+}
+
+/// 64-bit hash from MurmurHash3 by Austin Appleby.
+#[wrappit] #[inline] 
+pub fn hashq(x: u64) -> u64 {
+    let x = (x ^ (x >> 33)) * 0xff51afd7ed558ccd;
+    let x = (x ^ (x >> 33)) * 0xc4ceb9fe1a85ec53;
+    x ^ (x >> 33)
+}
+
+/// 64-bit hash SplitMix64 by Sebastiano Vigna.
+/// Extra high quality. Passes PractRand as an indexed RNG.
+#[wrappit] #[inline] 
+pub fn hashr(x: u64) -> u64 {
+    let x = x * 0x9e3779b97f4a7c15;
+    let x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
+    let x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
+    x ^ (x >> 31)
 }
