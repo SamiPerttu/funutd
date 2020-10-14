@@ -1,4 +1,4 @@
-use super::prelude::*;
+use super::math::*;
 use super::hash::*;
 use glam::*;
 use wrapping_arithmetic::wrappit;

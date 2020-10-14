@@ -1,4 +1,4 @@
-use super::prelude::*;
+use super::math::Int;
 use wrapping_arithmetic::wrappit;
 
 /// Quadratic probe. This is a bijective function in unsigned types.

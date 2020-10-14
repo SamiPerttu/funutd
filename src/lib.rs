@@ -1,7 +1,7 @@
-pub mod prelude;
-pub mod vec;
-pub mod map4;
 pub mod hash;
+pub mod map4;
+pub mod math;
+pub mod vec;
 
 // Standard RNG.
 pub type Rnd = rand_krull::Krull65;
