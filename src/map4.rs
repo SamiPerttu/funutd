@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use super::prelude::*;
+use super::hash::*;
 use glam::*;
 use wrapping_arithmetic::wrappit;
 
@@ -33,6 +34,81 @@ impl Basis3 {
         vec4(src(h) as f32, src(h >> 8) as f32, src(h >> 16) as f32, src(h >> 24) as f32) * (2.0 / 255.0) - Vec4::one()
     }
 }
+
+
+pub fn filter_point(origin: u64, cell: u64, cell_hash: u64) -> bool {
+    let two = 0x10 | (0x10 << 10) | (0x10 << 20);
+    let _one = 0x08 | (0x08 << 10) | (0x08 << 20);
+    let fraction = 0x07 | (0x07 << 10) | (0x07 << 20);
+
+    let point = cell + (cell_hash & fraction);
+    let delta = origin + two - point;
+    let sign = delta & two;
+    let dup_sign = sign | (sign >> 1) | (sign >> 2);
+    let dup_sign = dup_sign | (dup_sign >> 2);
+    let distance = delta ^ dup_sign;
+    let squared = distance * distance;
+    let sum = (squared & 0x3ff) + ((squared >> 10) & 0x3ff) + ((squared >> 20) & 0x3ff);
+    sum < 0x40
+}
+
+/*
+Let's use bit-parallelism to accelerate noise computations.
+We can't escape having to compute 27 cell hashes but maybe we can improve point filtering.
+After we hit something, then we can afford to do more work.
+
+We have 64 bits. From the bits, we want to rejection sample all points in 1 go.
+-Did I already determine I need more than 2 points/cell?
+-Anyway, try with 2 points/cell first, 3 points/cell is more difficult.
+
+We have 32 bits available per 3 components. That's 10 bits per component.
+We're going to use 5 fractional bits so we have enough room to multiply fractions.
+Our point location error will be 1/32 + 1/32 = 0.0625 at a maximum, which is OK.
+The bit arrangement for component:
+
+origin:  00001fffff
+offset: +0001000000
+point:  -000uufffff (uu = 00, 01 or 10)
+
+We have added an offset of 2.0 to origin to make sure it doesn't underflow.
+If a point is missing, we set its position to all zeros and it will be rejected.
+Now we have these 10-bit patterns.
+
+delta: 000ssfffff
+
+Examine the first three bits. (000 is impossible)
+
+100 = distance 0.0 .. 0.5
+011 = distance 0.0 .. 0.5
+101 = distance 0.5 .. 1.0
+010 = distance 0.5 .. 1.0
+110 = distance 1.0 .. 1.5
+001 = distance 1.0 .. 1.5
+111 = distance 1.5 .. 2.0
+
+Okay, we can see that if the highest bit is set, we can flip the lower bits and
+get the same value as positive. We can do this quite fast by duplicating the sign bit.
+Let's see... three shifts are needed, that's fine.
+So now we have absolute axial distances as 6-bit quantities:
+
+distance: 0000ufffff
+
+If any of the 'u' bits are 1, then we can discard the point immediately.
+(We can do this earlier already, actually.)
+otherwise, we have the remaining fractional axis distances:
+
+distance: 00000fffff
+
+Now we can multiply to get the distance squared.
+
+squared:  ffffffffff
+
+Finally, we add the results together by shifting and masking and get a 12-bit quantity
+with 10 fractional bits representing the distance squared. If the first two bits are
+zero, then we are close to the point. Next we need to build the exact vectors as floats
+and compute the distance again using floating point.
+*/
+
 
 pub fn noise3(v: Vec4) -> Vec4 {
     let basis = Basis3::new(v.truncate());

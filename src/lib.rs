@@ -1,13 +1,10 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
-
 pub mod prelude;
 pub mod vec;
 pub mod map4;
-pub mod lcg;
-pub mod rnd;
+pub mod hash;
+
+// Standard RNG.
+pub type Rnd = rand_krull::Krull65;
+pub use rand::Rng;
+
+pub use vec::*;

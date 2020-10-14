@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 wrapping_arithmetic = "0.1.0"
 glam = "0.9.4"
+rand_core = "0.5"
+rand = "0.7"
+rand_krull = { path = "../rand_krull" }
