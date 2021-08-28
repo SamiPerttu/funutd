@@ -103,8 +103,12 @@ impl Rnd {
     pub fn step(&mut self) -> u64 {
         // We can get a widening 64-to-128-bit multiply by casting the arguments from 64 bits.
         // We also add the increment in 128-bit to get the carry for free.
-        let lcg = (self.lcg0 as u128).wrapping_mul(self.multiplier() as u128).wrapping_add(self.increment_128());
-        self.lcg1 = ((lcg >> 64) as u64).wrapping_add(self.lcg1.wrapping_mul(self.multiplier())).wrapping_add(self.lcg0);
+        let lcg = (self.lcg0 as u128)
+            .wrapping_mul(self.multiplier() as u128)
+            .wrapping_add(self.increment_128());
+        self.lcg1 = ((lcg >> 64) as u64)
+            .wrapping_add(self.lcg1.wrapping_mul(self.multiplier()))
+            .wrapping_add(self.lcg0);
         self.lcg0 = lcg as u64;
         self.get()
     }

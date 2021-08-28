@@ -70,8 +70,8 @@ pub fn get_state<T: Int>(m: T, p: T, origin: T, iterations: T) -> T {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::*;
+    use super::*;
     #[test]
     pub fn run_tests() {
         let mut r: u128 = 0;

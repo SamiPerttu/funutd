@@ -44,9 +44,15 @@ pub fn hashq(x: u64) -> u64 {
     x ^ (x >> 33)
 }
 
-pub fn frc(x: u64) -> f32 { (x & 0xff) as f32 }
-pub fn grc(x: u64) -> f32 { (x & 0xff) as f32 }
-pub fn src(x: u64) -> f32 { (x & 0xff) as f32 }
+pub fn frc(x: u64) -> f32 {
+    (x & 0xff) as f32
+}
+pub fn grc(x: u64) -> f32 {
+    (x & 0xff) as f32
+}
+pub fn src(x: u64) -> f32 {
+    (x & 0xff) as f32
+}
 
 pub struct Basis3 {
     // Cell.
@@ -60,12 +66,29 @@ impl Basis3 {
     pub fn new(p: Vec3A) -> Basis3 {
         let i = p.floor();
         let a: [f32; 3] = i.into();
-        Basis3 { ix: (a[0] as i32) as u32, iy: (a[1] as i32) as u32, iz: (a[2] as i32) as u32, d: p - i }
+        Basis3 {
+            ix: (a[0] as i32) as u32,
+            iy: (a[1] as i32) as u32,
+            iz: (a[2] as i32) as u32,
+            d: p - i,
+        }
     }
-    pub fn hash_x(&self, current: u64, dx: i32) -> u64 { hashc(current ^ (self.ix.wrapping_add(dx as u32)) as u64) }
-    pub fn hash_y(&self, current: u64, dy: i32) -> u64 { hashd(current ^ (self.iy.wrapping_add(dy as u32)) as u64) }
-    pub fn hash_xy(&self, current: u64, dx: i32, dy: i32) -> u64 { hashd(current ^ ((self.ix.wrapping_add(dx as u32)) as u64) ^ (((self.iy.wrapping_add(dy as u32)) as u64) << 32)) }
-    pub fn hash_z(&self, current: u64, dz: i32) -> u64 { hashc(current ^ (self.iz.wrapping_add(dz as u32)) as u64) }
+    pub fn hash_x(&self, current: u64, dx: i32) -> u64 {
+        hashc(current ^ (self.ix.wrapping_add(dx as u32)) as u64)
+    }
+    pub fn hash_y(&self, current: u64, dy: i32) -> u64 {
+        hashd(current ^ (self.iy.wrapping_add(dy as u32)) as u64)
+    }
+    pub fn hash_xy(&self, current: u64, dx: i32, dy: i32) -> u64 {
+        hashd(
+            current
+                ^ ((self.ix.wrapping_add(dx as u32)) as u64)
+                ^ (((self.iy.wrapping_add(dy as u32)) as u64) << 32),
+        )
+    }
+    pub fn hash_z(&self, current: u64, dz: i32) -> u64 {
+        hashc(current ^ (self.iz.wrapping_add(dz as u32)) as u64)
+    }
 
     pub fn point(&self, h: u64) -> Vec3A {
         vec3a(frc(h) as f32, frc(h >> 8) as f32, frc(h >> 16) as f32) * (1.0 / 256.0)
@@ -82,16 +105,20 @@ impl Basis3 {
 pub fn noise3(v: Vec3A) -> Vec3A {
     let basis = Basis3::new(v);
     let mut result = Vec3A::ZERO;
-    for dx in -1 ..= 1 {
-        for dy in -1 ..= 1 {
+    for dx in -1..=1 {
+        for dy in -1..=1 {
             let hxy = basis.hash_xy(0, dx, dy);
             let mut offset = Vec3A::new(dx as f32, dy as f32, 0.0) - basis.d;
-            for dz in -1 ..= 1 {
+            for dz in -1..=1 {
                 let mut hash = basis.hash_z(hxy, dz);
                 // Pick number of cells as a rough approximation to a Poisson distribution.
-                let n = match hash & 7 { 0 | 1 | 2 | 3 => 1, 5 | 6 => 2, _ => 3 };
+                let n = match hash & 7 {
+                    0 | 1 | 2 | 3 => 1,
+                    5 | 6 => 2,
+                    _ => 3,
+                };
                 offset = Vec3A::new(offset.x, offset.y, dz as f32 - basis.d.z);
-                for di in 0 .. n {
+                for di in 0..n {
                     let p = basis.point(hash >> 8);
                     let distance2: f32 = (p + offset).length_squared();
                     let m: f32 = 1.0 - (((hash >> 3) & 31) as f32 / 31.0) * (15.0 / 31.0);
@@ -101,7 +128,9 @@ pub fn noise3(v: Vec3A) -> Vec3A {
                         let blend = 1.0 - smooth5(distance);
                         result += color * blend;
                     }
-                    if di + 1 < n { hash = hashq(hash); }
+                    if di + 1 < n {
+                        hash = hashq(hash);
+                    }
                 }
             }
         }
@@ -138,7 +167,11 @@ pub fn reflect3(amount: f32, v: Vec3A) -> Vec3A {
 
 /// Saturates components (amount > 0).
 pub fn overdrive(amount: f32, v: Vec3A) -> Vec3A {
-    Vec3A::new(softsign(v.x * amount), softsign(v.y * amount), softsign(v.z * amount))
+    Vec3A::new(
+        softsign(v.x * amount),
+        softsign(v.y * amount),
+        softsign(v.z * amount),
+    )
 }
 
 /// Saturates the input while retaining component proportions (amount > 0).
@@ -147,7 +180,7 @@ pub fn overdrive3(amount: f32, v: Vec3A) -> Vec3A {
     let v2 = v * v;
     let v4 = v2 * v2;
     let m = v4.length();
-    
+
     if m > 0.0 {
         let m = m.sqrt().sqrt();
         v / m * softsign(m * amount)
@@ -173,29 +206,3 @@ pub fn posterize3(levels: f32, sharpness: f32, v: Vec3A) -> Vec3A {
         Vec3A::ZERO
     }
 }
-
-pub fn bush_noise(x: f32, y: f32) -> f32 {
-    let octave1 = reflect3(2.5, noise3(Vec3A::new(x * 0.2, y * 0.2, 0.0))).x;
-    let octave2 = reflect3(2.0, noise3(Vec3A::new(x * 0.1, y * 0.1, 10.0))).x;
-    let octave3 = reflect3(1.5, noise3(Vec3A::new(x * 0.05, y * 0.05, 20.0))).x;
-    octave1 + octave2 + octave3
-}
-
-/*
-Code for spawning bushes (goes to main.rs line 31):
-
-    for y in -64..63 {
-        for x in -64..63 {
-            let noise = bush_noise(x as f32, y as f32);
-            if noise > 0.5 && (hashc(x as u64 + (y << 16) as u64) & 7) == 7 {
-                resources::ResourceBundle::spawn_bush(
-                    &mut commands,
-                    &asset_server,
-                    &mut texture_atlasses,
-                    16.0 * (x as f32),
-                    16.0 * (y as f32),
-                );
-            }
-        }
-    }
-*/

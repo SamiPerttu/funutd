@@ -1,13 +1,16 @@
 use super::math::Int;
 
 /// Quadratic probe. This is a bijective function in unsigned types.
-#[inline] pub fn quadp<T: Int>(x: T) -> T {
+#[inline]
+pub fn quadp<T: Int>(x: T) -> T {
     let q = x >> 1;
-    (x & T::one()).wrapping_add(q).wrapping_add(q.wrapping_mul(q))
+    (x & T::one())
+        .wrapping_add(q)
+        .wrapping_add(q.wrapping_mul(q))
 }
 
 /// 32-bit hash by Chris Wellons.
-#[inline] 
+#[inline]
 pub fn hasha(x: u32) -> u32 {
     let x = (x ^ (x >> 15)).wrapping_mul(0x2c1b3c6d);
     let x = (x ^ (x >> 12)).wrapping_mul(0x297a2d39);
@@ -15,7 +18,7 @@ pub fn hasha(x: u32) -> u32 {
 }
 
 /// 32-bit hash from MurmurHash3 by Austin Appleby.
-#[inline] 
+#[inline]
 pub fn hashb(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x85ebca6b);
     let x = (x ^ (x >> 13)).wrapping_mul(0xc2b2ae35);
@@ -23,7 +26,7 @@ pub fn hashb(x: u32) -> u32 {
 }
 
 /// 64-bit hash from SplitMix64.
-#[inline] 
+#[inline]
 pub fn hashc(x: u64) -> u64 {
     let x = (x ^ (x >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
     let x = (x ^ (x >> 27)).wrapping_mul(0x94d049bb133111eb);
@@ -31,7 +34,7 @@ pub fn hashc(x: u64) -> u64 {
 }
 
 /// 64-bit hash by degski. Inverse of hashe.
-#[inline] 
+#[inline]
 pub fn hashd(x: u64) -> u64 {
     let x = (x ^ (x >> 32)).wrapping_mul(0xd6e8feb86659fd93);
     let x = (x ^ (x >> 32)).wrapping_mul(0xd6e8feb86659fd93);
@@ -39,7 +42,7 @@ pub fn hashd(x: u64) -> u64 {
 }
 
 /// 64-bit hash by degski. Inverse of hashd.
-#[inline] 
+#[inline]
 pub fn hashe(x: u64) -> u64 {
     let x = (x ^ (x >> 32)).wrapping_mul(0xcfee444d8b59a89b);
     let x = (x ^ (x >> 32)).wrapping_mul(0xcfee444d8b59a89b);
@@ -47,7 +50,7 @@ pub fn hashe(x: u64) -> u64 {
 }
 
 /// 32-bit hash by degski. Inverse of hashg.
-#[inline] 
+#[inline]
 pub fn hashf(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x45d9f3b);
     let x = (x ^ (x >> 16)).wrapping_mul(0x45d9f3b);
@@ -55,7 +58,7 @@ pub fn hashf(x: u32) -> u32 {
 }
 
 /// 32-bit hash by degski. Inverse of hashf.
-#[inline] 
+#[inline]
 pub fn hashg(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x119de1f3);
     let x = (x ^ (x >> 16)).wrapping_mul(0x119de1f3);
@@ -63,7 +66,7 @@ pub fn hashg(x: u32) -> u32 {
 }
 
 /// 32-bit hash by Chris Wellon. Inverse of hashi.
-#[inline] 
+#[inline]
 pub fn hashh(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x7feb352d);
     let x = (x ^ (x >> 15)).wrapping_mul(0x846ca68b);
@@ -71,7 +74,7 @@ pub fn hashh(x: u32) -> u32 {
 }
 
 /// 32-bit hash by Chris Wellon. Inverse of hashh.
-#[inline] 
+#[inline]
 pub fn hashi(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x43021123);
     let x = (x ^ (x >> 15) ^ (x >> 30)).wrapping_mul(0x1d69e2a5);
@@ -79,7 +82,7 @@ pub fn hashi(x: u32) -> u32 {
 }
 
 /// 32-bit hash by Chris Wellon. Extra high quality.
-#[inline] 
+#[inline]
 pub fn hashj(x: u32) -> u32 {
     let x = (x ^ (x >> 17)).wrapping_mul(0xed5ad4bb);
     let x = (x ^ (x >> 11)).wrapping_mul(0xac4c1b51);
@@ -88,7 +91,7 @@ pub fn hashj(x: u32) -> u32 {
 }
 
 /// 64-bit hash by Thomas Wang.
-#[inline] 
+#[inline]
 pub fn hashk(x: u64) -> u64 {
     let x = !x.wrapping_add(x << 21);
     let x = x ^ (x >> 24);
@@ -100,7 +103,7 @@ pub fn hashk(x: u64) -> u64 {
 }
 
 /// 128-to-64-bit hash from CityHash by Geoff Pike and Jyrki Alakuijala.
-#[inline] 
+#[inline]
 pub fn hashm(x: u128) -> u64 {
     const C: u64 = 0x9ddfea08eb382d69;
     let y = (x >> 64) as u64;
@@ -111,7 +114,7 @@ pub fn hashm(x: u128) -> u64 {
 }
 
 /// 64-bit hash from FarmHash by Geoff Pike and Jyrki Alakuijala.
-#[inline] 
+#[inline]
 pub fn hashn(x: u64) -> u64 {
     const C: u64 = 0x9ddfea08eb382d69;
     let x = x.wrapping_mul(C);
@@ -120,7 +123,7 @@ pub fn hashn(x: u64) -> u64 {
 }
 
 /// 128-to-64-bit hash from FarmHash by Geoff Pike and Jyrki Alakuijala.
-#[inline] 
+#[inline]
 pub fn hashp(x: u128) -> u64 {
     const C: u64 = 0x9ddfea08eb382d69;
     let y = (x >> 64) as u64;
@@ -131,7 +134,7 @@ pub fn hashp(x: u128) -> u64 {
 }
 
 /// 64-bit hash from MurmurHash3 by Austin Appleby.
-#[inline] 
+#[inline]
 pub fn hashq(x: u64) -> u64 {
     let x = (x ^ (x >> 33)).wrapping_mul(0xff51afd7ed558ccd);
     let x = (x ^ (x >> 33)).wrapping_mul(0xc4ceb9fe1a85ec53);
@@ -140,7 +143,7 @@ pub fn hashq(x: u64) -> u64 {
 
 /// 64-bit hash SplitMix64. Extra high quality.
 /// Passes PractRand as an indexed RNG.
-#[inline] 
+#[inline]
 pub fn hashr(x: u64) -> u64 {
     let x = x.wrapping_mul(0x9e3779b97f4a7c15);
     let x = (x ^ (x >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);

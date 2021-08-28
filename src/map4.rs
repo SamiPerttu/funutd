@@ -1,12 +1,21 @@
-use super::math::*;
 use super::hash::*;
+use super::math::*;
 use glam::*;
 
 // 4-D procedural texture library.
 
-#[inline] pub fn frc(x: u64) -> f32 { (x & 0xff) as f32 }
-#[inline] pub fn grc(x: u64) -> f32 { (x & 0xff) as f32 }
-#[inline] pub fn src(x: u64) -> f32 { (x & 0xff) as f32 }
+#[inline]
+pub fn frc(x: u64) -> f32 {
+    (x & 0xff) as f32
+}
+#[inline]
+pub fn grc(x: u64) -> f32 {
+    (x & 0xff) as f32
+}
+#[inline]
+pub fn src(x: u64) -> f32 {
+    (x & 0xff) as f32
+}
 
 pub struct Basis3 {
     pub ix: u32,
@@ -15,46 +24,75 @@ pub struct Basis3 {
     pub d: Vec3A,
 }
 impl Basis3 {
-    #[inline] pub fn new(p: Vec3A) -> Basis3 {
+    #[inline]
+    pub fn new(p: Vec3A) -> Basis3 {
         let i = p.floor();
         let a: [f32; 3] = i.into();
-        Basis3 { ix: (a[0] as i32) as u32, iy: (a[1] as i32) as u32, iz: (a[2] as i32) as u32, d: p - i }
+        Basis3 {
+            ix: (a[0] as i32) as u32,
+            iy: (a[1] as i32) as u32,
+            iz: (a[2] as i32) as u32,
+            d: p - i,
+        }
     }
-    pub fn hash_x(&self, current: u64, dx: i32) -> u64 { hashc(current ^ (self.ix.wrapping_add(dx as u32)) as u64) }
-    pub fn hash_y(&self, current: u64, dy: i32) -> u64 { hashd(current ^ (self.iy.wrapping_add(dy as u32)) as u64) }
-    pub fn hash_xy(&self, current: u64, dx: i32, dy: i32) -> u64 { hashd(current ^ ((self.ix.wrapping_add(dx as u32)) as u64) ^ (((self.iy.wrapping_add(dy as u32)) as u64) << 32)) }
-    pub fn hash_z(&self, current: u64, dz: i32) -> u64 { hashc(current ^ (self.iz.wrapping_add(dz as u32)) as u64) }
+    pub fn hash_x(&self, current: u64, dx: i32) -> u64 {
+        hashc(current ^ (self.ix.wrapping_add(dx as u32)) as u64)
+    }
+    pub fn hash_y(&self, current: u64, dy: i32) -> u64 {
+        hashd(current ^ (self.iy.wrapping_add(dy as u32)) as u64)
+    }
+    pub fn hash_xy(&self, current: u64, dx: i32, dy: i32) -> u64 {
+        hashd(
+            current
+                ^ ((self.ix.wrapping_add(dx as u32)) as u64)
+                ^ (((self.iy.wrapping_add(dy as u32)) as u64) << 32),
+        )
+    }
+    pub fn hash_z(&self, current: u64, dz: i32) -> u64 {
+        hashc(current ^ (self.iz.wrapping_add(dz as u32)) as u64)
+    }
 
-    #[inline] pub fn point(&self, h: u64) -> Vec3A {
+    #[inline]
+    pub fn point(&self, h: u64) -> Vec3A {
         vec3a(frc(h) as f32, frc(h >> 8) as f32, frc(h >> 16) as f32) * (1.0 / 256.0)
     }
-    #[inline] pub fn gradient(&self, h: u64) -> Vec3A {
+    #[inline]
+    pub fn gradient(&self, h: u64) -> Vec3A {
         vec3a(grc(h) as f32, grc(h >> 8) as f32, grc(h >> 16) as f32) * (2.0 / 255.0) - Vec3A::one()
     }
-    #[inline] pub fn color(&self, h: u64) -> Vec4 {
-        vec4(src(h) as f32, src(h >> 8) as f32, src(h >> 16) as f32, src(h >> 24) as f32) * (2.0 / 255.0) - Vec4::one()
+    #[inline]
+    pub fn color(&self, h: u64) -> Vec4 {
+        vec4(
+            src(h) as f32,
+            src(h >> 8) as f32,
+            src(h >> 16) as f32,
+            src(h >> 24) as f32,
+        ) * (2.0 / 255.0)
+            - Vec4::one()
     }
 }
-
 
 pub fn noise3(v: Vec4) -> Vec4 {
     let basis = Basis3::new(Vec3A::from(v));
     let mut result = Vec4::zero();
-    for dx in -1 ..= 1 {
-        for dy in -1 ..= 1 {
+    for dx in -1..=1 {
+        for dy in -1..=1 {
             let hxy = basis.hash_xy(0, dx, dy);
             let mut offset = Vec3A::new(dx as f32, dy as f32, 0.0) - basis.d;
-            for dz in -1 ..= 1 {
+            for dz in -1..=1 {
                 let mut hash = basis.hash_z(hxy, dz);
                 // Pick number of cells as a rough approximation to a Poisson distribution.
-                //let n = match h & 7 { 0 | 1 | 2 | 3 | 4 => 1, 5 | 6 | 7 | _ => 2 };
-                //let n = match h & 7 { 0 | 1 | 2 | 3 | 4 => 2, 5 | 6 | 7 | _ => 3 };
-                let n = 1 + (hash & 1);
-                //let n = match h & 7 { 0 | 1 | 2 | 3 => 1, 5 | 6 => 2, 7 | _ => 3 };
-                //let n = match h & 7 { 0 | 1 | 2 => 1, 3 | 4 | 5 => 2, 6 | 7 | _ => 3 };
+                //let n = match hash & 7 { 0 | 1 | 2 | 3 | 4 => 1, 5 | 6 | 7 | _ => 2 };
+                //let n = match hash & 7 { 0 | 1 | 2 | 3 | 4 => 2, 5 | 6 | 7 | _ => 3 };
+                //let n = 1 + (hash & 1);
+                let n = match hash & 7 {
+                    0 | 1 | 2 | 3 => 1,
+                    5 | 6 => 2,
+                    _ => 3,
+                };
+                //let n = match hash & 7 { 0 | 1 | 2 => 1, 3 | 4 | 5 => 2, 6 | 7 | _ => 3 };
                 offset = Vec3A::new(offset.x, offset.y, dz as f32 - basis.d.z);
-                //let offset = Vec3A::new(dx as f32, dy as f32, dz as f32) - basis.d;
-                for di in 0 .. n {
+                for di in 0..n {
                     let p = basis.point(hash >> 8);
                     let distance2: f32 = (p + offset).length_squared();
                     let m: f32 = 1.0 - (((hash >> 3) & 31) as f32 / 31.0) * (15.0 / 31.0);
@@ -64,7 +102,9 @@ pub fn noise3(v: Vec4) -> Vec4 {
                         let blend = 1.0 - smooth5(distance);
                         result += color * blend;
                     }
-                    if di + 1 < n { hash = hashk(hash); }
+                    if di + 1 < n {
+                        hash = hashk(hash);
+                    }
                 }
             }
         }
@@ -115,7 +155,7 @@ pub fn overdrive(amount: f32, v: Vec4) -> Vec4 {
 pub fn overdrive4(amount: f32, v: Vec4) -> Vec4 {
     // Use the 8-norm as a smooth proxy for the largest magnitude component.
     let m = squared(squared(v)).length();
-    
+
     if m > 0.0 {
         let m = sqrt(sqrt(m));
         v / m * softsign(m * amount)
