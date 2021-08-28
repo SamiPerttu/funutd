@@ -2,7 +2,7 @@ use super::math::*;
 use super::hash::*;
 use glam::*;
 
-// 4-D procedural texture library.
+// 3-D procedural texture library.
 
 #[inline] pub fn frc(x: u64) -> f32 { (x & 0xff) as f32 }
 #[inline] pub fn grc(x: u64) -> f32 { (x & 0xff) as f32 }
@@ -31,15 +31,15 @@ impl Basis3 {
     #[inline] pub fn gradient(&self, h: u64) -> Vec3A {
         vec3a(grc(h) as f32, grc(h >> 8) as f32, grc(h >> 16) as f32) * (2.0 / 255.0) - Vec3A::one()
     }
-    #[inline] pub fn color(&self, h: u64) -> Vec4 {
-        vec4(src(h) as f32, src(h >> 8) as f32, src(h >> 16) as f32, src(h >> 24) as f32) * (2.0 / 255.0) - Vec4::one()
+    #[inline] pub fn color(&self, h: u64) -> Vec3A {
+        vec3a(src(h) as f32, src(h >> 8) as f32, src(h >> 16) as f32) * (2.0 / 255.0) - Vec3A::one()
     }
 }
 
 
-pub fn noise3(v: Vec4) -> Vec4 {
-    let basis = Basis3::new(Vec3A::from(v));
-    let mut result = Vec4::zero();
+pub fn noise3(v: Vec3A) -> Vec3A {
+    let basis = Basis3::new(v);
+    let mut result = Vec3A::zero();
     for dx in -1 ..= 1 {
         for dy in -1 ..= 1 {
             let hxy = basis.hash_xy(0, dx, dy);
@@ -73,46 +73,43 @@ pub fn noise3(v: Vec4) -> Vec4 {
 }
 
 /// Rotates v with u.
-pub fn rotate(amount: f32, v: Vec4, u: Vec4) -> Vec4 {
-    let w = v.truncate();
-    let t = u.truncate();
-    let length: f32 = t.length();
+pub fn rotate(amount: f32, v: Vec3A, u: Vec3A) -> Vec3A {
+    let length: f32 = u.length();
     if length > 1.0e-9 {
-        let axis = t / length;
-        let v3 = Quat::from_axis_angle(axis, amount * length) * w;
-        v3.extend(v.w)
+        let axis = u / length;
+        Quat::from_axis_angle(Vec3::from(axis), amount * length) * v
     } else {
-        Vec3A::zero().extend(v.w)
+        Vec3A::zero()
     }
 }
 
-pub fn softmix4(amount: f32, v: Vec4, u: Vec4) -> Vec4 {
+pub fn softmix3(amount: f32, v: Vec3A, u: Vec3A) -> Vec3A {
     let vw: f32 = exq(v * amount).length_squared();
     let uw: f32 = exq(u * amount).length_squared();
     let epsilon: f32 = 1.0e-10;
     (v * vw + u * uw) / (vw + uw + epsilon)
 }
 
-pub fn reflect(amount: f32, v: Vec4) -> Vec4 {
+pub fn reflect(amount: f32, v: Vec3A) -> Vec3A {
     wave(smooth3, v * amount)
 }
 
-pub fn reflect4(amount: f32, v: Vec4) -> Vec4 {
+pub fn reflect4(amount: f32, v: Vec3A) -> Vec3A {
     let m = v.length();
     if m > 0.0 {
         v * (sin(m * amount * (PI as f32) * 0.5) / m)
     } else {
-        Vec4::zero()
+        Vec3A::zero()
     }
 }
 
 /// Saturates components (amount > 0).
-pub fn overdrive(amount: f32, v: Vec4) -> Vec4 {
+pub fn overdrive(amount: f32, v: Vec3A) -> Vec3A {
     softsign(v * amount)
 }
 
 /// Saturates the input while retaining component proportions (amount > 0).
-pub fn overdrive4(amount: f32, v: Vec4) -> Vec4 {
+pub fn overdrive3(amount: f32, v: Vec3A) -> Vec3A {
     // Use the 8-norm as a smooth proxy for the largest magnitude component.
     let m = squared(squared(v)).length();
     
@@ -120,11 +117,11 @@ pub fn overdrive4(amount: f32, v: Vec4) -> Vec4 {
         let m = sqrt(sqrt(m));
         v / m * softsign(m * amount)
     } else {
-        Vec4::zero()
+        Vec3A::zero()
     }
 }
 
-pub fn posterize(levels: f32, sharpness: f32, v: Vec4) -> Vec4 {
+pub fn posterize(levels: f32, sharpness: f32, v: Vec3A) -> Vec3A {
     let v = v * levels;
     let b = v.floor();
     let t = v - b;
@@ -138,7 +135,7 @@ pub fn posterize(levels: f32, sharpness: f32, v: Vec4) -> Vec4 {
     (b + lerp(p0, p6 * p6, sharpness)) / levels
 }
 
-pub fn posterize4(levels: f32, sharpness: f32, v: Vec4) -> Vec4 {
+pub fn posterize4(levels: f32, sharpness: f32, v: Vec3A) -> Vec3A {
     let magnitude = levels * v.length();
     if magnitude > 0.0 {
         let b = magnitude.floor();
@@ -151,6 +148,7 @@ pub fn posterize4(levels: f32, sharpness: f32, v: Vec4) -> Vec4 {
         };
         v * ((b + p) / magnitude)
     } else {
-        Vec4::zero()
+        Vec3A::zero()
     }
 }
+

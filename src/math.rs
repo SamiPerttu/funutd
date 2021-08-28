@@ -1,5 +1,6 @@
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Sub, Mul, Div, Neg};
 use std::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};
+use std::cmp::PartialEq;
 
 pub trait Num: Copy
     + Add<Output = Self>
@@ -10,11 +11,11 @@ pub trait Num: Copy
     fn zero() -> Self;
     fn one() -> Self;
     fn new(x: i64) -> Self;
-    fn new_u64(x: u64) -> Self;
-    fn new_f64(x: f64) -> Self;
-    fn new_f32(x: f32) -> Self;
+    fn from_u64(x: u64) -> Self;
+    fn from_f64(x: f64) -> Self;
+    fn from_f32(x: f32) -> Self;
     fn abs(self) -> Self;
-    fn sign(self) -> Self;
+    fn signum(self) -> Self;
     fn min(self, other: Self) -> Self;
     fn max(self, other: Self) -> Self;
     fn pow(self, other: Self) -> Self;
@@ -24,7 +25,7 @@ pub trait Num: Copy
 }
 
 #[inline] pub fn abs<T: Num>(x: T) -> T { x.abs() }
-#[inline] pub fn sign<T: Num>(x: T) -> T { x.sign() }
+#[inline] pub fn signum<T: Num>(x: T) -> T { x.signum() }
 #[inline] pub fn min<T: Num>(x: T, y: T) -> T { x.min(y) }
 #[inline] pub fn max<T: Num>(x: T, y: T) -> T { x.max(y) }
 #[inline] pub fn pow<T: Num>(x: T, y: T) -> T { x.pow(y) }
@@ -38,11 +39,11 @@ macro_rules! impl_signed_num {
         #[inline] fn zero() -> Self { 0 }
         #[inline] fn one() -> Self { 1 }
         #[inline] fn new(x: i64) -> Self { x as Self }
-        #[inline] fn new_u64(x: u64) -> Self { x as Self }
-        #[inline] fn new_f64(x: f64) -> Self { x as Self }
-        #[inline] fn new_f32(x: f32) -> Self { x as Self }
+        #[inline] fn from_u64(x: u64) -> Self { x as Self }
+        #[inline] fn from_f64(x: f64) -> Self { x as Self }
+        #[inline] fn from_f32(x: f32) -> Self { x as Self }
         #[inline] fn abs(self) -> Self { <$t>::abs(self) }
-        #[inline] fn sign(self) -> Self { self.signum() }
+        #[inline] fn signum(self) -> Self { self.signum() }
         #[inline] fn min(self, other: Self) -> Self { std::cmp::min(self, other) }
         #[inline] fn max(self, other: Self) -> Self { std::cmp::max(self, other) }
         #[inline] fn pow(self, other: Self) -> Self { <$t>::pow(self, other as u32) }
@@ -52,7 +53,7 @@ macro_rules! impl_signed_num {
     }) *
     }
 }
-impl_signed_num! { i8, i16, i32, i64, i128 }
+impl_signed_num! { i8, i16, i32, i64, i128, isize }
 
 macro_rules! impl_unsigned_num {
     ( $($t:ty),* ) => {
@@ -60,11 +61,11 @@ macro_rules! impl_unsigned_num {
         #[inline] fn zero() -> Self { 0 }
         #[inline] fn one() -> Self { 1 }
         #[inline] fn new(x: i64) -> Self { x as Self }
-        #[inline] fn new_u64(x: u64) -> Self { x as Self }
-        #[inline] fn new_f64(x: f64) -> Self { x as Self }
-        #[inline] fn new_f32(x: f32) -> Self { x as Self }
+        #[inline] fn from_u64(x: u64) -> Self { x as Self }
+        #[inline] fn from_f64(x: f64) -> Self { x as Self }
+        #[inline] fn from_f32(x: f32) -> Self { x as Self }
         #[inline] fn abs(self) -> Self { self }
-        #[inline] fn sign(self) -> Self { 1 }
+        #[inline] fn signum(self) -> Self { 1 }
         #[inline] fn min(self, other: Self) -> Self { std::cmp::min(self, other) }
         #[inline] fn max(self, other: Self) -> Self { std::cmp::max(self, other) }
         #[inline] fn pow(self, other: Self) -> Self { <$t>::pow(self, other as u32) }
@@ -74,7 +75,7 @@ macro_rules! impl_unsigned_num {
     }) *
     }
 }
-impl_unsigned_num! { u8, u16, u32, u64, u128 }
+impl_unsigned_num! { u8, u16, u32, u64, u128, usize }
 
 macro_rules! impl_float_num {
     ( $($t:ty),* ) => {
@@ -82,11 +83,11 @@ macro_rules! impl_float_num {
         #[inline] fn zero() -> Self { 0.0 }
         #[inline] fn one() -> Self { 1.0 }
         #[inline] fn new(x: i64) -> Self { x as Self }
-        #[inline] fn new_u64(x: u64) -> Self { x as Self }
-        #[inline] fn new_f64(x: f64) -> Self { x as Self }
-        #[inline] fn new_f32(x: f32) -> Self { x as Self }
+        #[inline] fn from_u64(x: u64) -> Self { x as Self }
+        #[inline] fn from_f64(x: f64) -> Self { x as Self }
+        #[inline] fn from_f32(x: f32) -> Self { x as Self }
         #[inline] fn abs(self) -> Self { <$t>::abs(self) }
-        #[inline] fn sign(self) -> Self { self.signum() }
+        #[inline] fn signum(self) -> Self { self.signum() }
         #[inline] fn min(self, other: Self) -> Self { <$t>::min(self, other) }
         #[inline] fn max(self, other: Self) -> Self { <$t>::max(self, other) }
         #[inline] fn pow(self, other: Self) -> Self { <$t>::powf(self, other) }
@@ -105,6 +106,10 @@ pub trait Int: Num
     + BitXor<Output = Self>
     + Shl<usize, Output = Self>
     + Shr<usize, Output = Self>
+    + PartialOrd
+    + Ord
+    + PartialEq
+    + Eq
 {
     fn wrapping_add(self, other: Self) -> Self;
     fn wrapping_sub(self, other: Self) -> Self;
@@ -120,9 +125,17 @@ macro_rules! impl_int {
     }) *
     }
 }
-impl_int! { i8, i16, i32, i64, i128, u8, u16, u32, u64, u128 }
+impl_int! { i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize }
 
-pub trait Real {
+pub trait Real : Copy
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Div<Output = Self>
+    + Neg<Output = Self>
+    + PartialOrd
+    + PartialEq
+{
     fn sqrt(self) -> Self;
     fn exp(self) -> Self;
     fn log(self) -> Self;
@@ -326,8 +339,8 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
   let d0 = y1 - y0;
   let d1 = y2 - y1;
   let d2 = y3 - y2;
-  let d1d = (sign(d0) + sign(d1)) * min3(d0 + d1, abs(d0), abs(d1));
-  let d2d = (sign(d1) + sign(d2)) * min3(d1 + d2, abs(d1), abs(d2));
+  let d1d = (signum(d0) + signum(d1)) * min3(d0 + d1, abs(d0), abs(d1));
+  let d2d = (signum(d1) + signum(d2)) * min3(d1 + d2, abs(d1), abs(d2));
   cubed(x) * (T::new(2) * y1 - T::new(2) * y2 + d1d + d2d) + squared(x) * (T::new(-3) * y1 + T::new(3) * y2 - T::new(2) * d1d - d2d) + x * d1d + y1
 }
 
@@ -358,7 +371,7 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
 #[inline] pub fn exq<T: Num>(x: T) -> T {
     // With a branch:
     // if x > 0 { x * x + x + 1 } else { 1 / (1 - x) }
-    let p = x.max(T::zero());
+    let p = max(x, T::zero());
     p * p + p + T::one() / (T::one() + p - x)
 }
 
@@ -366,7 +379,7 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
 #[inline] pub fn softmix<T: Num>(amount: T, x: T, y: T) -> T {
     let xw = exq(x * amount);
     let yw = exq(y * amount);
-    (x * xw + y * yw) / (xw + yw + T::new_f32(1.0e-10))
+    (x * xw + y * yw) / (xw + yw + T::from_f32(1.0e-10))
 }
 
 /// Linear congruential generator from Numerical Recipes. Cycles through all u32 values.
@@ -398,8 +411,9 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
 
 /// Sum of a geometric series with n terms: sum over i in [0, n[ of a0 * ratio ** i.
 #[inline] pub fn geometric_sum<T: Num + PartialOrd>(n: T, a0: T, ratio: T) -> T {
-    if ratio != T::one() {
-        a0 * (T::one() - ratio.pow(n)) / (T::one() - ratio)
+    let denom = T::one() - ratio;
+    if denom != T::zero() {
+        a0 * (T::one() - ratio.pow(n)) / denom
     } else {
         a0 * n
     }
