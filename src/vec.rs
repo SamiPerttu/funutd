@@ -93,18 +93,24 @@ pub fn int4(x: i32, y: i32, z: i32, w: i32) -> Int4 {
 pub trait Vec2Ext {
     type Scalar;
     fn from_angle(radians: Self::Scalar) -> Self;
+    fn rotate90(self) -> Self;
+    fn rotate270(self) -> Self;
 }
 
 impl Vec2Ext for Vec2 {
     type Scalar = f32;
     fn from_angle(radians: f32) -> Vec2 {
-        vec2(sin(radians), cos(radians))
+        vec2(cos(radians), sin(radians))
     }
+    fn rotate90(self) -> Self { vec2(-self.y, self.x) }
+    fn rotate270(self) -> Self { vec2(self.y, -self.x) }
 }
 
 impl Vec2Ext for Vec2d {
     type Scalar = f64;
     fn from_angle(radians: f64) -> Vec2d {
-        vec2d(sin(radians), cos(radians))
+        vec2d(cos(radians), sin(radians))
     }
+    fn rotate90(self) -> Self { vec2d(-self.y, self.x) }
+    fn rotate270(self) -> Self { vec2d(self.y, -self.x) }
 }
