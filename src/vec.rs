@@ -72,7 +72,7 @@ pub fn int4(x: i32, y: i32, z: i32, w: i32) -> Int4 { Int4::new(x, y, z, w) }
 
 pub trait Vec2Ext {
     type Scalar;
-    fn from_angle(scalar: Self::Scalar) -> Self;
+    fn from_angle(radians: Self::Scalar) -> Self;
 }
 
 impl Vec2Ext for Vec2 {
