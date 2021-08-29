@@ -195,8 +195,6 @@ pub fn tan<T: Real>(x: T) -> T {
     x.tan()
 }
 
-
-
 macro_rules! impl_real {
     ( $($t:ty),* ) => {
     $( impl Real for $t {
