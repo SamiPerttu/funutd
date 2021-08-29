@@ -122,3 +122,16 @@ impl Vec2Ext for Vec2d {
         vec2d(self.y, -self.x)
     }
 }
+
+impl Vec2Ext for Int2 {
+    type Scalar = i32;
+    fn from_angle(_radians: i32) -> Int2 {
+        panic!()
+    }
+    fn rotate_90(self) -> Self {
+        int2(-self.y, self.x)
+    }
+    fn rotate_270(self) -> Self {
+        int2(self.y, -self.x)
+    }
+}
