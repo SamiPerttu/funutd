@@ -36,20 +36,20 @@ impl Basis3 {
         }
     }
     pub fn hash_x(&self, current: u64, dx: i32) -> u64 {
-        hashc(current ^ (self.ix.wrapping_add(dx as u32)) as u64)
+        hash64a(current ^ (self.ix.wrapping_add(dx as u32)) as u64)
     }
     pub fn hash_y(&self, current: u64, dy: i32) -> u64 {
-        hashd(current ^ (self.iy.wrapping_add(dy as u32)) as u64)
+        hash64b(current ^ (self.iy.wrapping_add(dy as u32)) as u64)
     }
     pub fn hash_xy(&self, current: u64, dx: i32, dy: i32) -> u64 {
-        hashd(
+        hash64b(
             current
                 ^ ((self.ix.wrapping_add(dx as u32)) as u64)
                 ^ (((self.iy.wrapping_add(dy as u32)) as u64) << 32),
         )
     }
     pub fn hash_z(&self, current: u64, dz: i32) -> u64 {
-        hashc(current ^ (self.iz.wrapping_add(dz as u32)) as u64)
+        hash64a(current ^ (self.iz.wrapping_add(dz as u32)) as u64)
     }
 
     #[inline]
@@ -97,7 +97,7 @@ pub fn noise3(v: Vec3A) -> Vec3A {
                         result += color * blend;
                     }
                     if di + 1 < n {
-                        hash = hashk(hash);
+                        hash = hash64c(hash);
                     }
                 }
             }
