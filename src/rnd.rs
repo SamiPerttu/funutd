@@ -20,9 +20,6 @@ pub const LCG_M64_2: u64 = 0xaf251af3b0f025b5;
 pub const LCG_M64_3: u64 = 0xb564ef22ec7aece5;
 pub const LCG_M64_4: u64 = 0xf7c2ebc08f67f2b5;
 
-//#[cfg(feature = "serde")]
-//use serde::{Deserialize, Serialize};
-
 // Krull64 features
 // -"trivially strong" design by Sebastiano Vigna
 // -64-bit output, 192-bit state and footprint
@@ -33,7 +30,6 @@ pub const LCG_M64_4: u64 = 0xf7c2ebc08f67f2b5;
 // -generation takes approximately 3.0 ns (where PCG-128 is 2.4 ns and Krull65 is 4.6 ns)
 
 /// Krull64 non-cryptographic RNG. 64-bit output, 192-bit state.
-//#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Eq, PartialEq, Debug, Default)]
 pub struct Rnd {
     /// LCG state low bits.
@@ -175,7 +171,7 @@ impl Rnd {
     /// Jumps forward (if steps > 0) or backward (if steps < 0) or does nothing (if steps = 0).
     /// The stream wraps around, so signed steps can be interpreted as unsigned.
     pub fn jump(&mut self, steps: i128) {
-        let lcg = crate::lcg::get_state(
+        let lcg = super::lcg::get_state(
             self.multiplier_128(),
             self.increment_128(),
             self.lcg_128(),
@@ -187,7 +183,7 @@ impl Rnd {
 
     /// Returns current position in stream. The full state of the generator is (stream, position).
     pub fn position(&self) -> u128 {
-        crate::lcg::get_iterations(
+        super::lcg::get_iterations(
             self.multiplier_128(),
             self.increment_128(),
             self.origin_128(),
@@ -197,7 +193,7 @@ impl Rnd {
 
     /// Sets position in stream.
     pub fn set_position(&mut self, position: u128) {
-        let lcg = crate::lcg::get_state(
+        let lcg = super::lcg::get_state(
             self.multiplier_128(),
             self.increment_128(),
             self.origin_128(),
