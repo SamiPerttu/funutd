@@ -194,10 +194,14 @@ pub fn tan<T: Real>(x: T) -> T {
     x.tan()
 }
 
+
+
 macro_rules! impl_real {
     ( $($t:ty),* ) => {
     $( impl Real for $t {
+        #[allow(clippy::excessive_precision)]
         const PI: Self = 3.14159265358979323846;
+        #[allow(clippy::excessive_precision)]
         const TAU: Self = 6.283185307179586;
         #[inline] fn sqrt(self) -> Self { self.sqrt() }
         #[inline] fn exp(self) -> Self { self.exp() }
