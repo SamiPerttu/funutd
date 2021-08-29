@@ -134,7 +134,7 @@ pub fn hash128a(x: u128) -> u64 {
 
 /// 128-to-64-bit hash from FarmHash by Geoff Pike and Jyrki Alakuijala.
 #[inline]
-pub fn hash128p(x: u128) -> u64 {
+pub fn hash128b(x: u128) -> u64 {
     const C: u64 = 0x9ddfea08eb382d69;
     let y = (x >> 64) as u64;
     let a = (x as u64 ^ y).wrapping_mul(C);
