@@ -161,6 +161,7 @@ pub trait Real:
 {
     const PI: Self;
     const TAU: Self;
+    const SQRT_2: Self;
     fn sqrt(self) -> Self;
     fn exp(self) -> Self;
     fn log(self) -> Self;
@@ -203,6 +204,8 @@ macro_rules! impl_real {
         const PI: Self = 3.14159265358979323846;
         #[allow(clippy::excessive_precision)]
         const TAU: Self = 6.283185307179586;
+        #[allow(clippy::excessive_precision)]
+        const SQRT_2: Self = 1.4142135623730950488;
         #[inline] fn sqrt(self) -> Self { self.sqrt() }
         #[inline] fn exp(self) -> Self { self.exp() }
         #[inline] fn log(self) -> Self { self.ln() }
