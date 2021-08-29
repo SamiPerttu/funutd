@@ -159,6 +159,8 @@ pub trait Real:
     + PartialOrd
     + PartialEq
 {
+    const PI: Self;
+    const TAU: Self;
     fn sqrt(self) -> Self;
     fn exp(self) -> Self;
     fn log(self) -> Self;
@@ -195,6 +197,8 @@ pub fn tan<T: Real>(x: T) -> T {
 macro_rules! impl_real {
     ( $($t:ty),* ) => {
     $( impl Real for $t {
+        const PI: Self = 3.14159265358979323846;
+        const TAU: Self = 6.283185307179586;
         #[inline] fn sqrt(self) -> Self { self.sqrt() }
         #[inline] fn exp(self) -> Self { self.exp() }
         #[inline] fn log(self) -> Self { self.ln() }
@@ -250,15 +254,6 @@ impl_as_primitive!(bool => {});
 pub fn cast<T: AsPrimitive<U>, U: Copy>(t: T) -> U {
     t.as_()
 }
-
-/// sqrt(2)
-pub const SQRT_2: f64 = std::f64::consts::SQRT_2;
-/// e (Euler's constant)
-pub const E: f64 = std::f64::consts::E;
-/// pi
-pub const PI: f64 = std::f64::consts::PI;
-/// tau = 2 * pi
-pub const TAU: f64 = std::f64::consts::TAU;
 
 /// Minimum of 3 items.
 #[inline]
@@ -465,9 +460,10 @@ pub fn softsign_d<T: Num>(x: T) -> T {
 
 /// This exp-like response function is second order continuous.
 /// It has asymmetrical magnitude curves: (inverse) linear when x < 0 and quadratic when x > 0.
-/// f(x) >= 0 for all x. Like the exponential function, f(0) = f'(0) = 1.
+/// softexp(x) >= 0 for all x.
+/// Like the exponential function, softexp(0) = softexp'(0) = 1.
 #[inline]
-pub fn exq<T: Num>(x: T) -> T {
+pub fn softexp<T: Num>(x: T) -> T {
     // With a branch:
     // if x > 0 { x * x + x + 1 } else { 1 / (1 - x) }
     let p = max(x, T::zero());
@@ -477,8 +473,8 @@ pub fn exq<T: Num>(x: T) -> T {
 // Softmin function when amount < 0, softmax when amount > 0, and average when amount = 0.
 #[inline]
 pub fn softmix<T: Num>(amount: T, x: T, y: T) -> T {
-    let xw = exq(x * amount);
-    let yw = exq(y * amount);
+    let xw = softexp(x * amount);
+    let yw = softexp(y * amount);
     (x * xw + y * yw) / (xw + yw + T::from_f32(1.0e-10))
 }
 

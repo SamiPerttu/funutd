@@ -127,8 +127,8 @@ pub fn rotate(amount: f32, v: Vec4, u: Vec4) -> Vec4 {
 }
 
 pub fn softmix4(amount: f32, v: Vec4, u: Vec4) -> Vec4 {
-    let vw: f32 = exq(v * amount).length_squared();
-    let uw: f32 = exq(u * amount).length_squared();
+    let vw: f32 = softexp(v * amount).length_squared();
+    let uw: f32 = softexp(u * amount).length_squared();
     let epsilon: f32 = 1.0e-10;
     (v * vw + u * uw) / (vw + uw + epsilon)
 }
@@ -140,7 +140,7 @@ pub fn reflect(amount: f32, v: Vec4) -> Vec4 {
 pub fn reflect4(amount: f32, v: Vec4) -> Vec4 {
     let m = v.length();
     if m > 0.0 {
-        v * (sin(m * amount * (PI as f32) * 0.5) / m)
+        v * (sin(m * amount * f32::PI * 0.5) / m)
     } else {
         Vec4::zero()
     }
