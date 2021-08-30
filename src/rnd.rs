@@ -236,7 +236,7 @@ impl Rnd {
 
     /// Generates the next 128-bit random number.
     #[inline]
-    pub fn next_128(&mut self) -> u128 {
+    pub fn next_u128(&mut self) -> u128 {
         self.step() as u128 | ((self.step() as u128) << 64)
     }
 
