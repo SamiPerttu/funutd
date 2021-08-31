@@ -14,12 +14,6 @@ pub const LCG_M65_2: u128 = 0x1d605bbb58c8abbfd;
 pub const LCG_M65_3: u128 = 0x1d7d8dd3a6a72b43d;
 pub const LCG_M65_4: u128 = 0x1f20529e418340d05;
 
-// 64-bit LCG multipliers.
-pub const LCG_M64_1: u64 = 0xd1342543de82ef95;
-pub const LCG_M64_2: u64 = 0xaf251af3b0f025b5;
-pub const LCG_M64_3: u64 = 0xb564ef22ec7aece5;
-pub const LCG_M64_4: u64 = 0xf7c2ebc08f67f2b5;
-
 // Krull64 features
 // -"trivially strong" design by Sebastiano Vigna
 // -64-bit output, 192-bit state and footprint
@@ -166,6 +160,17 @@ impl Rnd {
         let mut krull = Rnd::from_u64(((seed >> 64) ^ seed) as u64);
         krull.set_position((seed as u128) << 64);
         krull
+    }
+
+    /// Creates a new Krull64, randomizing the 64-bit stream number
+    /// from system time. Stream position is set to 0.
+    pub fn from_time() -> Self {
+        let start = std::time::SystemTime::now();
+        let since_epoch = start
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went antediluvian?");
+        let ns = since_epoch.as_nanos();
+        Self::from_u64(ns as u64)
     }
 
     /// Jumps forward (if steps > 0) or backward (if steps < 0) or does nothing (if steps = 0).
