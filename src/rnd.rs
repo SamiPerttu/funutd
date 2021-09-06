@@ -239,10 +239,48 @@ impl Rnd {
         self.step()
     }
 
+    /// Generates the next 32-bit random number.
+    #[inline]
+    pub fn next_i32(&mut self) -> i32 {
+        self.step() as i32
+    }
+
+    /// Generates the next 64-bit random number.
+    #[inline]
+    pub fn next_i64(&mut self) -> i64 {
+        self.step() as i64
+    }
+
     /// Generates the next 128-bit random number.
     #[inline]
     pub fn next_u128(&mut self) -> u128 {
         self.step() as u128 | ((self.step() as u128) << 64)
+    }
+
+    /// Returns the next u64 in the inclusive range (min, max).
+    pub fn next_u64_in(&mut self, min: u64, max: u64) -> u64 {
+        assert!(max >= min);
+        let diff = max - min;
+        if diff < u64::MAX {
+            self.next_u64() % (diff + 1)
+        } else {
+            self.next_u64()
+       }
+    }
+
+    /// Returns the next u32 in the inclusive range (min, max).
+    pub fn next_u32_in(&mut self, min: u32, max: u32) -> u32 {
+        self.next_u64_in(min as u64, max as u64) as u32
+    }
+
+    /// Returns the next i64 in the inclusive range (min, max).
+    pub fn next_i64_in(&mut self, min: i64, max: i64) -> i64 {
+        self.next_u64_in(min as u64, max as u64) as i64
+    }
+
+    /// Returns the next i32 in the inclusive range (min, max).
+    pub fn next_i32_in(&mut self, min: i32, max: i32) -> i32 {
+        self.next_i64_in(min as i64, max as i64) as i32
     }
 
     /// Generates the next double precision random number in [0, 1[.
