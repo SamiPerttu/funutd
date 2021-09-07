@@ -100,11 +100,12 @@ pub fn int4(x: i32, y: i32, z: i32, w: i32) -> Int4 {
     Int4::new(x, y, z, w)
 }
 
-pub trait Vec2Ext {
+pub trait Vec2Ext : Sized {
     type Scalar;
     fn from_angle(radians: Self::Scalar) -> Self;
     fn rotate_90(self) -> Self;
     fn rotate_270(self) -> Self;
+    fn rotate(self, _radians: Self::Scalar) -> Self { panic!("Rotation not supported.") }
 }
 
 impl Vec2Ext for Vec2 {
@@ -120,6 +121,11 @@ impl Vec2Ext for Vec2 {
     #[inline]
     fn rotate_270(self) -> Self {
         vec2(self.y, -self.x)
+    }
+    fn rotate(self, radians: Self::Scalar) -> Self {
+        let cos_r = radians.cos();
+        let sin_r = radians.sin();
+        vec2(self.x * cos_r - self.y * sin_r, self.x * sin_r + self.y * cos_r)
     }
 }
 

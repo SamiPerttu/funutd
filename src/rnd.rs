@@ -283,6 +283,28 @@ impl Rnd {
         self.next_i64_in(min as i64, max as i64) as i32
     }
 
+    /// Returns the next u64 in the left closed range [0, limit[.
+    pub fn next_u64_to(&mut self, limit: u64) -> u64 {
+        assert!(limit > 0);
+        self.next_u64_in(0, limit - 1)
+    }
+
+    /// Returns the next u32 in the left closed range [0, limit[.
+    pub fn next_u32_to(&mut self, limit: u32) -> u32 {
+        self.next_u64_to(limit as u64) as u32
+    }
+
+    /// Returns the next i64 in the left closed range [0, limit[.
+    pub fn next_i64_to(&mut self, limit: i64) -> i64 {
+        assert!(limit > 0);
+        self.next_i64_in(0, limit - 1)
+    }
+
+    /// Returns the next i32 in the left closed range [0, limit[.
+    pub fn next_i32_to(&mut self, limit: i32) -> i32 {
+        self.next_i64_to(limit as i64) as i32
+    }
+
     /// Generates the next double precision random number in [0, 1[.
     #[inline]
     pub fn next_f64(&mut self) -> f64 {
