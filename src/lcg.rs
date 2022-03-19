@@ -74,10 +74,10 @@ mod tests {
     use super::*;
     #[test]
     pub fn run_tests() {
-        let mut r: u128 = 0;
+        let mut rnd_state: u128 = 0;
         let mut rnd = || -> u128 {
-            r = r.wrapping_mul(rnd::LCG_M128_1).wrapping_add(0xffff);
-            r
+            rnd_state = rnd_state.wrapping_mul(rnd::LCG_M128_1).wrapping_add(0xffff);
+            rnd_state
         };
 
         for _ in 0..1 << 12 {

@@ -1,13 +1,4 @@
-use super::math::Int;
-
-/// Quadratic probe. This is a bijective function in unsigned types.
-#[inline]
-pub fn quadratic_probe<T: Int>(x: T) -> T {
-    let q = x >> 1;
-    (x & T::one())
-        .wrapping_add(q)
-        .wrapping_add(q.wrapping_mul(q))
-}
+// Hash functions. All of the hashes here are permutations.
 
 /// 32-bit hash by degski. Inverse of hash32a_inverse.
 #[inline]
@@ -99,7 +90,7 @@ pub fn hash64c(x: u64) -> u64 {
     let x = x ^ (x >> 14);
     let x = x.wrapping_add(x << 2).wrapping_add(x << 4);
     let x = x ^ (x >> 28);
-    x + (x << 31)
+    x.wrapping_add(x << 31)
 }
 
 /// 64-bit hash from FarmHash by Geoff Pike and Jyrki Alakuijala.

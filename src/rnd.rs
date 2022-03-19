@@ -24,7 +24,7 @@ pub const LCG_M65_4: u128 = 0x1f20529e418340d05;
 // -generation takes approximately 3.0 ns (where PCG-128 is 2.4 ns and Krull65 is 4.6 ns)
 
 /// Krull64 non-cryptographic RNG. 64-bit output, 192-bit state.
-#[derive(Clone, Eq, PartialEq, Debug, Default)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Rnd {
     /// LCG state low bits.
     lcg0: u64,
@@ -32,6 +32,12 @@ pub struct Rnd {
     lcg1: u64,
     /// Stream number.
     stream: u64,
+}
+
+impl Default for Rnd {
+    fn default() -> Self {
+        Rnd::new()
+    }
 }
 
 // Stream position is measured in relation to an origin LCG state at position 0.
@@ -123,7 +129,6 @@ impl Rnd {
 
     /// Creates a new Krull64 RNG.
     /// Stream and position are set to 0.
-    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Rnd {
             lcg0: origin_0(0),
@@ -265,7 +270,7 @@ impl Rnd {
             self.next_u64() % (diff + 1)
         } else {
             self.next_u64()
-       }
+        }
     }
 
     /// Returns the next u32 in the inclusive range (min, max).

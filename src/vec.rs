@@ -53,9 +53,11 @@ pub type Vec2d = glam::DVec2;
 pub type Vec3d = glam::DVec3;
 pub type Vec4d = glam::DVec4;
 
-pub type Int2 = glam::IVec2;
-pub type Int3 = glam::IVec3;
-pub type Int4 = glam::IVec4;
+pub type Vec2i = glam::IVec2;
+pub type Vec3i = glam::IVec3;
+pub type Vec4i = glam::IVec4;
+
+pub type Quat = glam::Quat;
 
 #[inline]
 pub fn vec2(x: f32, y: f32) -> Vec2 {
@@ -88,24 +90,26 @@ pub fn vec4d(x: f64, y: f64, z: f64, w: f64) -> Vec4d {
 }
 
 #[inline]
-pub fn int2(x: i32, y: i32) -> Int2 {
-    Int2::new(x, y)
+pub fn vec2i(x: i32, y: i32) -> Vec2i {
+    Vec2i::new(x, y)
 }
 #[inline]
-pub fn int3(x: i32, y: i32, z: i32) -> Int3 {
-    Int3::new(x, y, z)
+pub fn vec3i(x: i32, y: i32, z: i32) -> Vec3i {
+    Vec3i::new(x, y, z)
 }
 #[inline]
-pub fn int4(x: i32, y: i32, z: i32, w: i32) -> Int4 {
-    Int4::new(x, y, z, w)
+pub fn vec4i(x: i32, y: i32, z: i32, w: i32) -> Vec4i {
+    Vec4i::new(x, y, z, w)
 }
 
-pub trait Vec2Ext : Sized {
+pub trait Vec2Ext: Sized {
     type Scalar;
     fn from_angle(radians: Self::Scalar) -> Self;
     fn rotate_90(self) -> Self;
     fn rotate_270(self) -> Self;
-    fn rotate(self, _radians: Self::Scalar) -> Self { panic!("Rotation not supported.") }
+    fn rotate(self, _radians: Self::Scalar) -> Self {
+        panic!("Rotation not supported.")
+    }
 }
 
 impl Vec2Ext for Vec2 {
@@ -125,7 +129,10 @@ impl Vec2Ext for Vec2 {
     fn rotate(self, radians: Self::Scalar) -> Self {
         let cos_r = radians.cos();
         let sin_r = radians.sin();
-        vec2(self.x * cos_r - self.y * sin_r, self.x * sin_r + self.y * cos_r)
+        vec2(
+            self.x * cos_r - self.y * sin_r,
+            self.x * sin_r + self.y * cos_r,
+        )
     }
 }
 
@@ -143,20 +150,29 @@ impl Vec2Ext for Vec2d {
     fn rotate_270(self) -> Self {
         vec2d(self.y, -self.x)
     }
+
+    fn rotate(self, radians: Self::Scalar) -> Self {
+        let cos_r = radians.cos();
+        let sin_r = radians.sin();
+        vec2d(
+            self.x * cos_r - self.y * sin_r,
+            self.x * sin_r + self.y * cos_r,
+        )
+    }
 }
 
-impl Vec2Ext for Int2 {
+impl Vec2Ext for Vec2i {
     type Scalar = i32;
     #[inline]
-    fn from_angle(_radians: i32) -> Int2 {
+    fn from_angle(_radians: i32) -> Vec2i {
         panic!()
     }
     #[inline]
     fn rotate_90(self) -> Self {
-        int2(-self.y, self.x)
+        vec2i(-self.y, self.x)
     }
     #[inline]
     fn rotate_270(self) -> Self {
-        int2(self.y, -self.x)
+        vec2i(self.y, -self.x)
     }
 }
