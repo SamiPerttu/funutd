@@ -4,7 +4,7 @@ use super::*;
 A parameter system for procedural generation.
 
 The Dna object contains the necessary, mutable
-context that is threaded through the generation process. 
+context that is threaded through the generation process.
 
 Inside Dna, we have a vector of raw data as 32-bit integers.
 We use the raw data to supply parameters for procedural generators.
@@ -31,24 +31,26 @@ pub struct Dna {
 }
 
 impl Dna {
-
     /// Create a new Dna from u64 seed.
     pub fn new(size: usize, seed: u64) -> Dna {
         let mut rnd = Rnd::from_u64(seed);
         let mut data = Vec::with_capacity(size);
-        for _ in 0 .. size {
+        for _ in 0..size {
             data.push(rnd.next_u32());
         }
-        Dna { address: vec![0], data }
+        Dna {
+            address: vec![0],
+            data,
+        }
     }
-    
+
     /// Calculates the current parameter hash based on the current local address.
     fn get_hash(&self) -> u64 {
         let l = self.address.len();
         let n = ADDRESS_LEVELS.min(l);
         let mut h: u64 = n as u64;
         // Use an ad hoc hash.
-        for i in (l - n) .. l {
+        for i in (l - n)..l {
             h = (h ^ self.address[i] as u64 ^ (h >> 32)).wrapping_mul(0xd6e8feb86659fd93);
         }
         (h ^ (h >> 32)).wrapping_mul(0xd6e8feb86659fd93)
@@ -109,7 +111,7 @@ impl Dna {
     }
 
     /// Calls a subgenerator.
-    pub fn call<X, F : Fn(&mut Dna) -> X>(&mut self, f: F) -> X {
+    pub fn call<X, F: Fn(&mut Dna) -> X>(&mut self, f: F) -> X {
         self.address.push(0);
         let x = f(self);
         self.address.pop();

@@ -233,7 +233,6 @@ impl Hasher for TileXY {
 pub trait Texture {
     fn at(&self, point: Vec3A) -> Vec3A;
     fn get_code(&self) -> String;
-    
 }
 
 /// Basis textures accept an additional frequency argument.
@@ -258,7 +257,11 @@ pub fn vnoise<H: Hasher>(seed: u64, frequency: f32, hasher: H) -> VNoise<H> {
 }
 
 pub fn vnoise_basis<H: Hasher>(seed: u64, hasher: H) -> VNoise<H> {
-    VNoise { seed, frequency: 1.0, hasher }
+    VNoise {
+        seed,
+        frequency: 1.0,
+        hasher,
+    }
 }
 
 impl<H: Hasher> BasisTexture for VNoise<H> {
@@ -304,11 +307,7 @@ impl<H: Hasher> BasisTexture for VNoise<H> {
     }
 
     fn get_basis_code(&self) -> String {
-        format!(
-            "vnoise_basis({}, {})",
-            self.seed,
-            self.hasher.get_code()
-        )
+        format!("vnoise_basis({}, {})", self.seed, self.hasher.get_code())
     }
 }
 
@@ -346,8 +345,7 @@ impl Texture for Saturate {
 
 /// Saturates components (amount > 0).
 /// Amount equals derivative at origin. Amounts greater than 1 result in overdrive.
-pub fn saturate(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture>
-{
+pub fn saturate(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     assert!(amount > 0.0);
     Box::new(Saturate { amount, texture })
 }
@@ -365,7 +363,14 @@ impl Texture for Reflect {
         wave(smooth3, self.offset + self.texture.at(point) * self.amount)
     }
     fn get_code(&self) -> String {
-        format!("reflect({}, vec3a({}, {}, {}), {})", self.amount, self.offset.x, self.offset.y, self.offset.z, self.texture.get_code())
+        format!(
+            "reflect({}, vec3a({}, {}, {}), {})",
+            self.amount,
+            self.offset.x,
+            self.offset.y,
+            self.offset.z,
+            self.texture.get_code()
+        )
     }
 }
 
@@ -373,7 +378,11 @@ impl Texture for Reflect {
 /// spread and reflect components. Amount is the scale (amount > 0),
 /// roughly corresponding to number of reflections.
 pub fn reflect(amount: f32, offset: Vec3A, texture: Box<dyn Texture>) -> Box<dyn Texture> {
-    Box::new(Reflect { amount, offset, texture })
+    Box::new(Reflect {
+        amount,
+        offset,
+        texture,
+    })
 }
 
 /// Posterize: applies a smooth step function in proportion to texture value magnitude.
@@ -402,7 +411,12 @@ impl Texture for Posterize {
         }
     }
     fn get_code(&self) -> String {
-        format!("posterize({}, {}, {})", self.levels, self.sharpness, self.texture.get_code())
+        format!(
+            "posterize({}, {}, {})",
+            self.levels,
+            self.sharpness,
+            self.texture.get_code()
+        )
     }
 }
 
@@ -410,7 +424,11 @@ impl Texture for Posterize {
 /// spread and reflect components. Amount is the scale (amount > 0),
 /// roughly corresponding to number of reflections.
 pub fn posterize(levels: f32, sharpness: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
-    Box::new(Posterize { levels, sharpness, texture })
+    Box::new(Posterize {
+        levels,
+        sharpness,
+        texture,
+    })
 }
 
 /// Saturates components while retaining component proportions.
@@ -439,8 +457,7 @@ impl Texture for Overdrive {
 
 /// Saturates components (amount > 0).
 /// Amount equals derivative at origin. Amounts greater than 1 result in overdrive.
-pub fn overdrive(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture>
-{
+pub fn overdrive(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     assert!(amount > 0.0);
     Box::new(Overdrive { amount, texture })
 }
@@ -469,33 +486,115 @@ impl Texture for VReflect {
 
 /// Saturates components (amount > 0).
 /// Amount equals derivative at origin. Amounts greater than 1 result in overdrive.
-pub fn vreflect(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture>
-{
+pub fn vreflect(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     assert!(amount > 0.0);
     Box::new(VReflect { amount, texture })
 }
 
-
-
-
-
-
-
-/// Mixes between two textures weighted with their vector magnitudes.
-pub fn softmix3(amount: f32, v: Vec3A, u: Vec3A) -> Vec3A {
-    let vw: f32 = softexp(v * amount).length_squared();
-    let uw: f32 = softexp(u * amount).length_squared();
-    let epsilon: f32 = 1.0e-9;
-    (v * vw + u * uw) / (vw + uw + epsilon)
+/// Rotates values of one texture with values from another texture.
+pub struct Rotate {
+    amount: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
 }
 
-/// Rotates v by u.
-pub fn rotate(amount: f32, v: Vec3A, u: Vec3A) -> Vec3A {
-    let length: f32 = u.length();
-    if length > 1.0e-9 {
-        let axis = u / length;
-        Quat::from_axis_angle(Vec3::from(axis), amount * length) * v
-    } else {
-        Vec3A::zero()
+impl Texture for Rotate {
+    fn at(&self, point: Vec3A) -> Vec3A {
+        let u = self.texture_a.at(point);
+        let v = self.texture_b.at(point);
+        let length: f32 = u.length();
+        if length > 1.0e-9 {
+            let axis = u / length;
+            Quat::from_axis_angle(Vec3::from(axis), self.amount * length) * v
+        } else {
+            Vec3A::zero()
+        }
+    }
+    fn get_code(&self) -> String {
+        format!(
+            "rotate({}, {}, {})",
+            self.amount,
+            self.texture_a.get_code(),
+            self.texture_b.get_code()
+        )
     }
 }
+
+/// Amount is the maximum rotation in radians.
+pub fn rotate(
+    amount: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
+) -> Box<dyn Texture> {
+    assert!(amount > 0.0);
+    Box::new(Rotate {
+        amount,
+        texture_a,
+        texture_b,
+    })
+}
+
+/// Mixes between two textures weighted with their vector magnitudes.
+pub struct Softmix3 {
+    amount: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
+}
+
+impl Texture for Softmix3 {
+    fn at(&self, point: Vec3A) -> Vec3A {
+        let u = self.texture_a.at(point);
+        let v = self.texture_b.at(point);
+        let vw: f32 = softexp(v * self.amount).length_squared();
+        let uw: f32 = softexp(u * self.amount).length_squared();
+        let epsilon: f32 = 1.0e-9;
+        (v * vw + u * uw) / (vw + uw + epsilon)
+    }
+    fn get_code(&self) -> String {
+        format!(
+            "softmix3({}, {}, {})",
+            self.amount,
+            self.texture_a.get_code(),
+            self.texture_b.get_code()
+        )
+    }
+}
+
+pub fn softmix3(
+    amount: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
+) -> Box<dyn Texture> {
+    assert!(amount > 0.0);
+    Box::new(Softmix3 {
+        amount,
+        texture_a,
+        texture_b,
+    })
+}
+
+/*
+        let v0 = self.texture.at(point);
+        let mut v = vec3a(v0.x, v0.y, v0.z);
+        let mut v1: Vec3A = v;
+        let mut v2: Vec3A = v;
+        let mut v3: Vec3A = v;
+        for _i in 0 .. 12 {
+            let u = vec3a(v.x * v.x - v.y * v.y - v.z * v.z + v0.x, 2.0 * v.x * v.y + v0.y, 2.0 * (v.x - v.y) * v.z + v0.z);
+            //u = vec3a(cubed(v.x) - 3.0 * v.x * (squared(v.y) + squared(v.z)) + v0.x, -cubed(v.y) + 3.0 * v.y * squared(v.x) - v.y * squared(v.z) + v0.y, cubed(v.z) - 3.0 * v.z * squared(v.x) + v.z * squared(v.y) + v0.z);
+            //u = vec3a(v.x * v.x - v.y * v.y + v0.x, 2.0 * v.x * v.y + v0.y, 0.0);
+            if u.length_squared() > 4.0 {
+                let w = (u.length_squared() - 4.0).tanh();
+                //return v0; // vec3a(-1.0, -1.0, -1.0);
+                return v3 * (1.0 - w) + v2 * w;
+                //return v * (1.0 - w) * 0.5 + u * w * 0.5;
+            }
+            v3 = v2;
+            v2 = v1;
+            v1 = v;
+            v = u;
+        }
+        //u * 0.5
+        v3
+
+*/

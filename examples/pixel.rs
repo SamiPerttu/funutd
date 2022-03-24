@@ -5,14 +5,14 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-const WIDTH: u32 = 320;
-const HEIGHT: u32 = 320;
+const WIDTH: u32 = 512;
+const HEIGHT: u32 = 512;
 
 //use utd::map3::*;
-use utd::map3gen::*;
-use utd::*;
-use utd::math::*;
 use utd::dna::*;
+use utd::map3gen::*;
+use utd::math::*;
+use utd::*;
 
 /// Application state.
 struct World {
@@ -44,10 +44,7 @@ fn main() -> Result<(), Error> {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
             world.draw(pixels.get_frame());
-            if pixels
-                .render()
-                .is_err()
-            {
+            if pixels.render().is_err() {
                 *control_flow = ControlFlow::Exit;
                 return;
             }
@@ -76,10 +73,7 @@ fn main() -> Result<(), Error> {
 impl World {
     /// Create a new `World` instance that can draw a moving box.
     fn new() -> Self {
-        Self {
-            z: 0.0,
-            phase: 0.0,
-        }
+        Self { z: 0.0, phase: 0.0 }
     }
 
     /// Update the `World` internal state; bounce the box around the screen.
@@ -92,8 +86,7 @@ impl World {
     ///
     /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
     fn draw(&self, frame: &mut [u8]) {
-
-        let mut dna = Dna::new(64, 8);
+        let mut dna = Dna::new(64, (self.z / 0.05) as u64);
         let texture = genmap3(10.0, &mut dna);
 
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
@@ -110,8 +103,12 @@ impl World {
 
             let value = texture.at(vec3a(fx, fy, self.z));
 
-            let rgba =
-                [(clamp01(value.x * 0.5 + 0.5) * 255.0) as u8, (clamp01(value.y * 0.5 + 0.5) * 255.0) as u8, (clamp01(value.z * 0.5 + 0.5) * 255.0) as u8, 0xff];
+            let rgba = [
+                (clamp01(value.x * 0.5 + 0.5) * 255.0) as u8,
+                (clamp01(value.y * 0.5 + 0.5) * 255.0) as u8,
+                (clamp01(value.z * 0.5 + 0.5) * 255.0) as u8,
+                0xff,
+            ];
 
             pixel.copy_from_slice(&rgba);
         }
