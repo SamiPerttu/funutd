@@ -1,243 +1,22 @@
 use super::hash::*;
+use super::map3base::*;
 use super::math::*;
-use glam::*;
+use super::*;
 
 /*
 3-D procedural texture library: procedural self-maps in 3-space.
 The preferred scale of texture values is [-1, 1] in each component.
 */
 
-/// Bases attach a feature grid to a queried point.
-/// Once attached, the grid is resolution independent:
-/// scale of the grid is decided prior to obtaining a basis.
-pub struct Basis {
-    /// Texture specific seed value.
-    pub seed: u64,
-    /// X grid coordinate of point.
-    pub ix: u32,
-    /// Y grid coordinate of point.
-    pub iy: u32,
-    /// Z grid coordinate of point.
-    pub iz: u32,
-    /// For repeating hashers: total number of X tiles.
-    pub sx: u32,
-    /// For repeating hashers: total number of Y tiles.
-    pub sy: u32,
-    /// For repeating hashers: total number of Z tiles.
-    pub sz: u32,
-    /// Position inside cell with components in left-closed range [0, 1[.
-    pub d: Vec3A,
-}
-
-/// Hashers supply data for grid cells and determine the topology of the procedural texture.
-pub trait Hasher {
-    /// Builds a grid around a point. The seed is texture specific.
-    fn query(&self, seed: u64, frequency: f32, point: Vec3A) -> Basis;
-    /// Hashes X coordinate. Supply any previous coordinate hashes in the previous argument.
-    fn hash_x(&self, basis: &Basis, previous: u64, dx: i32) -> u64;
-    /// Hashes Y coordinate. Supply any previous coordinate hashes in the previous argument.
-    fn hash_y(&self, basis: &Basis, previous: u64, dy: i32) -> u64;
-    /// Hashes Z coordinate. Supply any previous coordinate hashes in the previous argument.
-    fn hash_z(&self, basis: &Basis, previous: u64, dz: i32) -> u64;
-    /// Returns a code string that constructs this hasher.
-    fn get_code(&self) -> String;
-}
-
-/// Returns a pseudorandom vector from seed with components in left-closed range [0, 1[.
-pub fn hash_01(seed: u64) -> Vec3A {
-    let h = hash64a(seed);
-    let c: f32 = 1.0 / (1 << 21) as f32;
-    vec3a(
-        (h & 0x1fffff) as f32,
-        ((h >> 21) & 0x1fffff) as f32,
-        (h >> 43) as f32,
-    ) * c
-}
-
-/// Returns a pseudorandom vector from seed with components in closed range [-1, 1].
-pub fn hash_11(seed: u64) -> Vec3A {
-    let h = hash64b(seed);
-    let c: f32 = 2.0 / (1 << 21) as f32;
-    vec3a(
-        (h & 0x1fffff) as f32,
-        ((h >> 21) & 0x1fffff) as f32,
-        (h >> 43) as f32,
-    ) * c
-        - Vec3A::one()
-}
-
-/// This hasher does not tile on any axis. Frequencies are not rounded to nearest integer.
-pub struct TileNone {}
-
-pub fn tile_none() -> TileNone {
-    TileNone {}
-}
-
-impl Hasher for TileNone {
-    fn query(&self, seed: u64, frequency: f32, point: Vec3A) -> Basis {
-        let p = frequency * point + hash_01(seed);
-        let i = p.floor();
-        Basis {
-            seed,
-            ix: (i.x as i32) as u32,
-            iy: (i.y as i32) as u32,
-            iz: (i.z as i32) as u32,
-            sx: 0,
-            sy: 0,
-            sz: 0,
-            d: p - i,
-        }
-    }
-    fn hash_x(&self, basis: &Basis, current: u64, dx: i32) -> u64 {
-        let x = basis.ix.wrapping_add(dx as u32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
-    }
-    fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
-        let y = basis.iy.wrapping_add(dy as u32);
-        hash64b(current ^ y as u64)
-    }
-    fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
-        let z = basis.iz.wrapping_add(dz as u32);
-        hash64c(current ^ z as u64)
-    }
-    fn get_code(&self) -> String {
-        String::from("tile_none()")
-    }
-}
-
-/// This hasher tiles all coordinate axes.
-/// Frequencies are rounded to the nearest positive integer.
-pub struct TileAll {
-    sx: u32,
-    sy: u32,
-    sz: u32,
-}
-
-pub fn tile_all() -> TileAll {
-    TileAll {
-        sx: 1,
-        sy: 1,
-        sz: 1,
-    }
-}
-pub fn tile_all_in(sx: u32, sy: u32, sz: u32) -> TileAll {
-    TileAll { sx, sy, sz }
-}
-
-impl Hasher for TileAll {
-    fn query(&self, seed: u64, frequency: f32, point: Vec3A) -> Basis {
-        let fr = frequency.round().max(1.0);
-        let fi = fr as u32;
-        let p = fr * point + hash_01(seed);
-        let i = p.floor();
-        let sx = self.sx * fi;
-        let sy = self.sy * fi;
-        let sz = self.sz * fi;
-        Basis {
-            seed,
-            ix: (i.x as i32).rem_euclid(sx as i32) as u32,
-            iy: (i.y as i32).rem_euclid(sy as i32) as u32,
-            iz: (i.z as i32).rem_euclid(sz as i32) as u32,
-            sx,
-            sy,
-            sz,
-            d: p - i,
-        }
-    }
-    fn hash_x(&self, basis: &Basis, current: u64, dx: i32) -> u64 {
-        let x = (basis.ix as i32)
-            .wrapping_add(dx)
-            .rem_euclid(basis.sx as i32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
-    }
-    fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
-        let y = (basis.iy as i32)
-            .wrapping_add(dy)
-            .rem_euclid(basis.sy as i32);
-        hash64a(current ^ y as u64)
-    }
-    fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
-        let z = (basis.iz as i32)
-            .wrapping_add(dz)
-            .rem_euclid(basis.sz as i32);
-        hash64a(current ^ z as u64)
-    }
-    fn get_code(&self) -> String {
-        if self.sx == 1 && self.sy == 1 && self.sz == 1 {
-            String::from("tile_all()")
-        } else {
-            format!("tile_all_in({}, {}, {})", self.sx, self.sy, self.sz)
-        }
-    }
-}
-
-/// This hasher tiles X and Y coordinate axes.
-/// Frequencies are rounded to the nearest positive integer.
-pub struct TileXY {
-    sx: u32,
-    sy: u32,
-}
-
-pub fn tile_xy() -> TileXY {
-    TileXY { sx: 1, sy: 1 }
-}
-pub fn tile_xy_in(sx: u32, sy: u32) -> TileXY {
-    TileXY { sx, sy }
-}
-
-impl Hasher for TileXY {
-    fn query(&self, seed: u64, frequency: f32, point: Vec3A) -> Basis {
-        let fr = frequency.round().max(1.0);
-        let fi = fr as u32;
-        let p = fr * point + hash_01(seed);
-        let i = p.floor();
-        let sx = self.sx * fi;
-        let sy = self.sy * fi;
-        Basis {
-            seed,
-            ix: (i.x as i32).rem_euclid(sx as i32) as u32,
-            iy: (i.y as i32).rem_euclid(sy as i32) as u32,
-            iz: (i.z as i32) as u32,
-            sx,
-            sy,
-            sz: 0,
-            d: p - i,
-        }
-    }
-    fn hash_x(&self, basis: &Basis, current: u64, dx: i32) -> u64 {
-        let x = (basis.ix as i32)
-            .wrapping_add(dx)
-            .rem_euclid(basis.sx as i32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
-    }
-    fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
-        let y = (basis.iy as i32)
-            .wrapping_add(dy)
-            .rem_euclid(basis.sy as i32);
-        hash64a(current ^ y as u64)
-    }
-    fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
-        let z = basis.iz.wrapping_add(dz as u32);
-        hash64c(current ^ z as u64)
-    }
-    fn get_code(&self) -> String {
-        if self.sx == 1 && self.sy == 1 {
-            String::from("tile_xy()")
-        } else {
-            format!("tile_xy_in({}, {})", self.sx, self.sy)
-        }
-    }
-}
-
 /// Textures are self-maps in 3-space.
 pub trait Texture {
-    fn at(&self, point: Vec3A) -> Vec3A;
+    fn at(&self, point: Vec3a) -> Vec3a;
     fn get_code(&self) -> String;
 }
 
 /// Basis textures accept an additional frequency argument.
 pub trait BasisTexture {
-    fn at_frequency(&self, frequency: f32, point: Vec3A) -> Vec3A;
+    fn at_frequency(&self, frequency: f32, point: Vec3a) -> Vec3a;
     fn get_basis_code(&self) -> String;
 }
 
@@ -265,15 +44,15 @@ pub fn vnoise_basis<H: Hasher>(seed: u64, hasher: H) -> VNoise<H> {
 }
 
 impl<H: Hasher> BasisTexture for VNoise<H> {
-    fn at_frequency(&self, frequency: f32, point: Vec3A) -> Vec3A {
+    fn at_frequency(&self, frequency: f32, point: Vec3a) -> Vec3a {
         let basis = self.hasher.query(self.seed, frequency, point);
-        let mut result = Vec3A::zero();
+        let mut result = Vec3a::zero();
 
         for dx in -1..=1 {
             let hx = self.hasher.hash_x(&basis, 0, dx);
             for dy in -1..=1 {
                 let hxy = self.hasher.hash_y(&basis, hx, dy);
-                let mut offset = Vec3A::new(dx as f32, dy as f32, 0.0) - basis.d;
+                let mut offset = Vec3a::new(dx as f32, dy as f32, 0.0) - basis.d;
                 for dz in -1..=1 {
                     let mut hash = self.hasher.hash_z(&basis, hxy, dz);
                     // Pick number of cells as a rough approximation to a Poisson distribution.
@@ -312,7 +91,7 @@ impl<H: Hasher> BasisTexture for VNoise<H> {
 }
 
 impl<H: Hasher> Texture for VNoise<H> {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         self.at_frequency(self.frequency, point)
     }
 
@@ -335,7 +114,7 @@ pub struct Saturate {
 
 /// Saturates components.
 impl Texture for Saturate {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         softsign(self.texture.at(point) * self.amount)
     }
     fn get_code(&self) -> String {
@@ -354,17 +133,17 @@ pub fn saturate(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
 /// spread and reflect components.
 pub struct Reflect {
     amount: f32,
-    offset: Vec3A,
+    offset: Vec3a,
     texture: Box<dyn Texture>,
 }
 
 impl Texture for Reflect {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         wave(smooth3, self.offset + self.texture.at(point) * self.amount)
     }
     fn get_code(&self) -> String {
         format!(
-            "reflect({}, vec3a({}, {}, {}), {})",
+            "reflect({}, Vec3a({}, {}, {}), {})",
             self.amount,
             self.offset.x,
             self.offset.y,
@@ -377,7 +156,7 @@ impl Texture for Reflect {
 /// Applies a wavy function to texture values with an offset, which can
 /// spread and reflect components. Amount is the scale (amount > 0),
 /// roughly corresponding to number of reflections.
-pub fn reflect(amount: f32, offset: Vec3A, texture: Box<dyn Texture>) -> Box<dyn Texture> {
+pub fn reflect(amount: f32, offset: Vec3a, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     Box::new(Reflect {
         amount,
         offset,
@@ -393,7 +172,7 @@ pub struct Posterize {
 }
 
 impl Texture for Posterize {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         let v = self.texture.at(point);
         let magnitude = self.levels * v.length();
         if magnitude > 0.0 {
@@ -407,7 +186,7 @@ impl Texture for Posterize {
             };
             v * ((base + p) / magnitude)
         } else {
-            Vec3A::zero()
+            Vec3a::zero()
         }
     }
     fn get_code(&self) -> String {
@@ -439,7 +218,7 @@ pub struct Overdrive {
 }
 
 impl Texture for Overdrive {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         let v = self.texture.at(point);
         // Use the 4-norm as a smooth proxy for the largest magnitude component.
         let magnitude = squared(v).length_squared();
@@ -447,7 +226,7 @@ impl Texture for Overdrive {
             let m = sqrt(sqrt(magnitude));
             v / m * softsign(m * self.amount)
         } else {
-            Vec3A::zero()
+            Vec3a::zero()
         }
     }
     fn get_code(&self) -> String {
@@ -470,13 +249,13 @@ pub struct VReflect {
 }
 
 impl Texture for VReflect {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         let v = self.texture.at(point);
         let m = v.length();
         if m > 0.0 {
             v * (sin(m * self.amount * f32::PI * 0.5) / m)
         } else {
-            Vec3A::zero()
+            Vec3a::zero()
         }
     }
     fn get_code(&self) -> String {
@@ -499,7 +278,7 @@ pub struct Rotate {
 }
 
 impl Texture for Rotate {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         let u = self.texture_a.at(point);
         let v = self.texture_b.at(point);
         let length: f32 = u.length();
@@ -507,7 +286,7 @@ impl Texture for Rotate {
             let axis = u / length;
             Quat::from_axis_angle(Vec3::from(axis), self.amount * length) * v
         } else {
-            Vec3A::zero()
+            Vec3a::zero()
         }
     }
     fn get_code(&self) -> String {
@@ -542,7 +321,7 @@ pub struct Softmix3 {
 }
 
 impl Texture for Softmix3 {
-    fn at(&self, point: Vec3A) -> Vec3A {
+    fn at(&self, point: Vec3a) -> Vec3a {
         let u = self.texture_a.at(point);
         let v = self.texture_b.at(point);
         let vw: f32 = softexp(v * self.amount).length_squared();
@@ -575,17 +354,17 @@ pub fn softmix3(
 
 /*
         let v0 = self.texture.at(point);
-        let mut v = vec3a(v0.x, v0.y, v0.z);
-        let mut v1: Vec3A = v;
-        let mut v2: Vec3A = v;
-        let mut v3: Vec3A = v;
+        let mut v = Vec3a(v0.x, v0.y, v0.z);
+        let mut v1: Vec3a = v;
+        let mut v2: Vec3a = v;
+        let mut v3: Vec3a = v;
         for _i in 0 .. 12 {
-            let u = vec3a(v.x * v.x - v.y * v.y - v.z * v.z + v0.x, 2.0 * v.x * v.y + v0.y, 2.0 * (v.x - v.y) * v.z + v0.z);
-            //u = vec3a(cubed(v.x) - 3.0 * v.x * (squared(v.y) + squared(v.z)) + v0.x, -cubed(v.y) + 3.0 * v.y * squared(v.x) - v.y * squared(v.z) + v0.y, cubed(v.z) - 3.0 * v.z * squared(v.x) + v.z * squared(v.y) + v0.z);
-            //u = vec3a(v.x * v.x - v.y * v.y + v0.x, 2.0 * v.x * v.y + v0.y, 0.0);
+            let u = Vec3a(v.x * v.x - v.y * v.y - v.z * v.z + v0.x, 2.0 * v.x * v.y + v0.y, 2.0 * (v.x - v.y) * v.z + v0.z);
+            //u = Vec3a(cubed(v.x) - 3.0 * v.x * (squared(v.y) + squared(v.z)) + v0.x, -cubed(v.y) + 3.0 * v.y * squared(v.x) - v.y * squared(v.z) + v0.y, cubed(v.z) - 3.0 * v.z * squared(v.x) + v.z * squared(v.y) + v0.z);
+            //u = Vec3a(v.x * v.x - v.y * v.y + v0.x, 2.0 * v.x * v.y + v0.y, 0.0);
             if u.length_squared() > 4.0 {
                 let w = (u.length_squared() - 4.0).tanh();
-                //return v0; // vec3a(-1.0, -1.0, -1.0);
+                //return v0; // Vec3a(-1.0, -1.0, -1.0);
                 return v3 * (1.0 - w) + v2 * w;
                 //return v * (1.0 - w) * 0.5 + u * w * 0.5;
             }

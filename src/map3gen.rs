@@ -1,5 +1,6 @@
 use super::dna::*;
 use super::map3::*;
+use super::map3base::*;
 use super::math::*;
 use super::*;
 

@@ -86,7 +86,7 @@ impl World {
     ///
     /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
     fn draw(&self, frame: &mut [u8]) {
-        let mut dna = Dna::new(64, (self.z / 0.05) as u64);
+        let mut dna = Dna::new(64, (self.z / 0.02) as u64);
         let texture = genmap3(10.0, &mut dna);
 
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
