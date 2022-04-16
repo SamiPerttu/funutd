@@ -25,7 +25,7 @@ pub struct Basis {
 }
 
 /// Hashers supply data for grid cells and determine the topology of the procedural texture.
-pub trait Hasher {
+pub trait Hasher: Clone {
     /// Builds a grid around a point. The seed is texture specific.
     fn query(&self, seed: u64, frequency: f32, point: Vec3a) -> Basis;
 
@@ -66,6 +66,7 @@ pub fn hash_11(seed: u64) -> Vec3a {
 }
 
 /// This hasher does not tile on any axis. Frequencies are not rounded to nearest integer.
+#[derive(Clone)]
 pub struct TileNone {}
 
 pub fn tile_none() -> TileNone {
@@ -106,6 +107,7 @@ impl Hasher for TileNone {
 
 /// This hasher tiles all coordinate axes.
 /// Frequencies are rounded to the nearest positive integer.
+#[derive(Clone)]
 pub struct TileAll {
     sx: u32,
     sy: u32,
@@ -172,6 +174,7 @@ impl Hasher for TileAll {
 
 /// This hasher tiles X and Y coordinate axes.
 /// Frequencies are rounded to the nearest positive integer.
+#[derive(Clone)]
 pub struct TileXY {
     sx: u32,
     sy: u32,

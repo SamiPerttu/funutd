@@ -27,12 +27,12 @@ pub struct VNoise<H: Hasher> {
     hasher: H,
 }
 
-pub fn vnoise<H: Hasher>(seed: u64, frequency: f32, hasher: H) -> VNoise<H> {
-    VNoise {
+pub fn vnoise<H: 'static + Hasher>(seed: u64, frequency: f32, hasher: H) -> Box<dyn Texture> {
+    Box::new(VNoise {
         seed,
         frequency,
         hasher,
-    }
+    })
 }
 
 pub fn vnoise_basis<H: Hasher>(seed: u64, hasher: H) -> VNoise<H> {

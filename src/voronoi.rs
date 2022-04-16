@@ -1,6 +1,6 @@
 use super::hash::*;
-use super::map3base::*;
 use super::map3::*;
+use super::map3base::*;
 use super::math::*;
 use super::*;
 
@@ -46,9 +46,15 @@ impl VoronoiState {
         }
     }
 
-    pub fn distance_1(&self) -> f32 { self.distance1 }
-    pub fn distance_2(&self) -> f32 { self.distance2 }
-    pub fn distance_3(&self) -> f32 { self.distance3 }
+    pub fn distance_1(&self) -> f32 {
+        self.distance1
+    }
+    pub fn distance_2(&self) -> f32 {
+        self.distance2
+    }
+    pub fn distance_3(&self) -> f32 {
+        self.distance3
+    }
 
     /// Expands next cell or returns false if we are done.
     pub fn expand_next<H: Hasher>(&mut self, hasher: &H) -> bool {
@@ -73,7 +79,7 @@ impl VoronoiState {
         } else {
             (false, dzneg)
         };
-        if distance_x < distance_y && distance_x < distance_z {
+        if distance_x <= distance_y && distance_x <= distance_z {
             if distance_x >= self.distance3 {
                 return false;
             }
@@ -89,7 +95,7 @@ impl VoronoiState {
                     self.process_cell(hasher, expand_x, y, z);
                 }
             }
-        } else if distance_y < distance_x && distance_y < distance_z {
+        } else if distance_y <= distance_x && distance_y <= distance_z {
             if distance_y >= self.distance3 {
                 return false;
             }
@@ -168,6 +174,9 @@ pub struct Voronoi<H: Hasher> {
     seed: u64,
     frequency: f32,
     hasher: H,
+    pattern_x: usize,
+    pattern_y: usize,
+    pattern_z: usize,
 }
 
 impl<H: Hasher> Voronoi<H> {}
@@ -179,10 +188,13 @@ impl<H: Hasher> Texture for Voronoi<H> {
 
     fn get_code(&self) -> String {
         format!(
-            "voronoi({}, {}, {})",
+            "voronoi({}, {}, {}, {}, {}, {})",
             self.seed,
             self.frequency,
-            self.hasher.get_code()
+            self.hasher.get_code(),
+            self.pattern_x,
+            self.pattern_y,
+            self.pattern_z
         )
     }
 }
@@ -190,12 +202,59 @@ impl<H: Hasher> Texture for Voronoi<H> {
 impl<H: Hasher> BasisTexture for Voronoi<H> {
     fn at_frequency(&self, frequency: f32, point: Vec3a) -> Vec3a {
         let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
+        state.process_cell(&self.hasher, 0, 0, 0);
         while state.expand_next(&self.hasher) {}
-        // TODO replace components with dot products with chosen patterns.
-        vec3a(state.distance_1(), state.distance_2(), state.distance_3())
+        let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
+        vec3a(
+            d_vec.dot(voronoi_pattern(self.pattern_x)),
+            d_vec.dot(voronoi_pattern(self.pattern_y)),
+            d_vec.dot(voronoi_pattern(self.pattern_z)),
+        )
     }
 
     fn get_basis_code(&self) -> String {
-        format!("voronoi_basis({}, {})", self.seed, self.hasher.get_code())
+        format!(
+            "voronoi_basis({}, {}, {}, {}, {})",
+            self.seed,
+            self.hasher.get_code(),
+            self.pattern_x,
+            self.pattern_y,
+            self.pattern_z
+        )
+    }
+}
+
+pub fn voronoi<H: 'static + Hasher>(
+    seed: u64,
+    frequency: f32,
+    hasher: H,
+    pattern_x: usize,
+    pattern_y: usize,
+    pattern_z: usize,
+) -> Box<dyn Texture> {
+    Box::new(Voronoi {
+        seed,
+        frequency,
+        hasher,
+        pattern_x,
+        pattern_y,
+        pattern_z,
+    })
+}
+
+pub fn voronoi_basis<H: Hasher>(
+    seed: u64,
+    hasher: H,
+    pattern_x: usize,
+    pattern_y: usize,
+    pattern_z: usize,
+) -> Voronoi<H> {
+    Voronoi {
+        seed,
+        frequency: 1.0,
+        hasher,
+        pattern_x,
+        pattern_y,
+        pattern_z,
     }
 }

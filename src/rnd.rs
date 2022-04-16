@@ -15,7 +15,7 @@ pub const LCG_M65_3: u128 = 0x1d7d8dd3a6a72b43d;
 pub const LCG_M65_4: u128 = 0x1f20529e418340d05;
 
 // Krull64 features
-// -"trivially strong" design by Sebastiano Vigna
+// -"trivially strong" design by Sami Perttu
 // -64-bit output, 192-bit state and footprint
 // -full 192-bit state space with no bad states and no bad seeds
 // -2**64 pairwise independent streams of length 2**128
@@ -342,6 +342,29 @@ mod tests {
 
     #[test]
     pub fn run_tests() {
+        let krull64_expected: [u64; 16] = [
+            0x57c1b6c1df5ed4d2,
+            0x1efdba83398cf412,
+            0xa02d8dfda06ac9ce,
+            0xf6e3f32be5e81841,
+            0xc2a690083e597e0d,
+            0x3b1b2ed3fa6c15aa,
+            0x241c691340a479b2,
+            0x88c24c8d79bb67c1,
+            0x09f213c4fc2b61dc,
+            0xa4b6ad95c713c951,
+            0xa43904ae3341edf7,
+            0xee2dca4d5fd5f8fa,
+            0x27bdddbeaa4aadb0,
+            0x98c78e68dbf634b2,
+            0xf0edc57017a0d5a5,
+            0x8647ea5de51eca23,
+        ];
+        let mut krull64 = Rnd::from_u64(0);
+        for x in krull64_expected {
+            assert_eq!(x, krull64.next_u64());
+        }
+
         let mut r: u128 = 0;
         let mut rnd = || -> u128 {
             r = r.wrapping_mul(LCG_M128_1).wrapping_add(0xffff);
