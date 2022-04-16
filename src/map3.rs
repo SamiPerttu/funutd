@@ -377,3 +377,38 @@ pub fn softmix3(
         v3
 
 */
+
+/// Mixes between two textures weighted with their vector magnitudes.
+pub struct Displace {
+    amount: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
+}
+
+impl Texture for Displace {
+    fn at(&self, point: Vec3a) -> Vec3a {
+        let u = self.texture_a.at(point);
+        self.texture_b.at(point + u * self.amount)
+    }
+    fn get_code(&self) -> String {
+        format!(
+            "displace({}, {}, {})",
+            self.amount,
+            self.texture_a.get_code(),
+            self.texture_b.get_code()
+        )
+    }
+}
+
+pub fn displace(
+    amount: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
+) -> Box<dyn Texture> {
+    assert!(amount > 0.0);
+    Box::new(Displace {
+        amount,
+        texture_a,
+        texture_b,
+    })
+}

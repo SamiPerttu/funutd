@@ -94,8 +94,8 @@ impl World {
             0.6513046,
             voronoi(0, 7.175018, tile_none(), 10, 3, 1),
         );
-        let mut dna = Dna::new(64, (self.z / 0.02) as u64);
-        let texture = genmap3(10.0, &mut dna);
+        let mut dna = Dna::new(128, (self.z / 0.02) as u64);
+        let texture = genmap3(15.0, &mut dna);
 
         println!("{}", texture.get_code());
 

@@ -13,7 +13,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     let x = dna.get_f32_in(0.0, basis_weight + unary_weight + binary_weight);
 
     if x < basis_weight {
-        let frequency = xerp(1.0, 64.0, dna.get_f32());
+        let frequency = xerp(1.5, 32.0, dna.get_f32());
         let texture: Box<dyn Texture> = match dna.get_u32_in(0, 1) {
             0 => vnoise(0, frequency, tile_none()),
             _ => {
@@ -65,14 +65,18 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         let child_complexity = complexity * 0.5 - 1.0;
         let child_a = dna.call(|dna| genmap3(child_complexity, dna));
         let child_b = dna.call(|dna| genmap3(child_complexity, dna));
-        let binary_node = match dna.get_u32_in(0, 1) {
+        let binary_node = match dna.get_u32_in(0, 2) {
             0 => {
                 let amount = dna.get_f32_in(3.0, 10.0);
                 rotate(amount, child_a, child_b)
             }
-            _ => {
+            1 => {
                 let amount = dna.get_f32_in(1.0, 10.0);
                 softmix3(amount, child_a, child_b)
+            }
+            _ => {
+                let amount = dna.get_f32_in(0.05, 0.25);
+                displace(amount, child_a, child_b)
             }
         };
         binary_node
