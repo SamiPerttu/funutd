@@ -107,7 +107,7 @@ impl World {
         /*
         let texture = palette(0.50937665, 0.7222409, posterize(3.8965485, 0.60872394, softmix3(5.2831173, vnoise(1974317952, 10.774254, tile_all()), voronoi(1974803501, 24.273146, tile_all(), 5, 9, 7))));
         */
-        let mut dna = Dna::new(128, (self.z / 0.02) as u64);
+        let mut dna = Dna::new(256, (self.z / 0.02) as u64);
         let texture = genmap3palette(20.0, &mut dna);
 
         println!("{}", texture.get_code());
