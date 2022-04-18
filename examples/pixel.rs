@@ -95,7 +95,7 @@ impl World {
             voronoi(0, 7.175018, tile_none(), 10, 3, 1),
         );
         let mut dna = Dna::new(128, (self.z / 0.02) as u64);
-        let texture = genmap3(15.0, &mut dna);
+        let texture = genmap3palette(15.0, &mut dna);
 
         println!("{}", texture.get_code());
 
@@ -113,7 +113,7 @@ impl World {
 
             //let texture = softmix3(3.7292252, vnoise(0, 2.2867033, tile_none()), voronoi(0, 60.37787, tile_none(), 12, 5, 8));
 
-            let value = texture.at(vec3a(fx, fy, self.z));
+            let value = texture.at(vec3a(fx, fy, self.z), None);
 
             let rgba = [
                 (clamp01(value.x * 0.5 + 0.5) * 255.0) as u8,

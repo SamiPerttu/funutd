@@ -1,5 +1,4 @@
 use super::hash::*;
-use super::map3::*;
 use super::map3base::*;
 use super::math::*;
 use super::*;
@@ -179,11 +178,18 @@ pub struct Voronoi<H: Hasher> {
     pattern_z: usize,
 }
 
-impl<H: Hasher> Voronoi<H> {}
-
 impl<H: Hasher> Texture for Voronoi<H> {
-    fn at(&self, point: Vec3a) -> Vec3a {
-        self.at_frequency(self.frequency, point)
+    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let frequency = frequency.unwrap_or(self.frequency);
+        let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
+        state.process_cell(&self.hasher, 0, 0, 0);
+        while state.expand_next(&self.hasher) {}
+        let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
+        vec3a(
+            d_vec.dot(voronoi_pattern(self.pattern_x)),
+            d_vec.dot(voronoi_pattern(self.pattern_y)),
+            d_vec.dot(voronoi_pattern(self.pattern_z)),
+        )
     }
 
     fn get_code(&self) -> String {
@@ -195,20 +201,6 @@ impl<H: Hasher> Texture for Voronoi<H> {
             self.pattern_x,
             self.pattern_y,
             self.pattern_z
-        )
-    }
-}
-
-impl<H: Hasher> BasisTexture for Voronoi<H> {
-    fn at_frequency(&self, frequency: f32, point: Vec3a) -> Vec3a {
-        let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
-        state.process_cell(&self.hasher, 0, 0, 0);
-        while state.expand_next(&self.hasher) {}
-        let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
-        vec3a(
-            d_vec.dot(voronoi_pattern(self.pattern_x)),
-            d_vec.dot(voronoi_pattern(self.pattern_y)),
-            d_vec.dot(voronoi_pattern(self.pattern_z)),
         )
     }
 
@@ -242,19 +234,19 @@ pub fn voronoi<H: 'static + Hasher>(
     })
 }
 
-pub fn voronoi_basis<H: Hasher>(
+pub fn voronoi_basis<H: 'static + Hasher>(
     seed: u64,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
     pattern_z: usize,
-) -> Voronoi<H> {
-    Voronoi {
+) -> Box<dyn Texture> {
+    Box::new(Voronoi {
         seed,
         frequency: 1.0,
         hasher,
         pattern_x,
         pattern_y,
         pattern_z,
-    }
+    })
 }

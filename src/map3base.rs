@@ -230,3 +230,15 @@ impl Hasher for TileXY {
         }
     }
 }
+
+/*
+3-D procedural texture library: procedural self-maps in 3-space.
+The preferred scale of texture values is [-1, 1] in each component.
+*/
+
+/// Textures are self-maps in 3-space.
+pub trait Texture {
+    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a;
+    fn get_code(&self) -> String;
+    fn get_basis_code(&self) -> String;
+}

@@ -1,16 +1,29 @@
+use super::color::*;
 use super::dna::*;
 use super::map3::*;
 use super::map3base::*;
 use super::math::*;
+use super::noise::*;
 use super::voronoi::*;
 use super::*;
+
+pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
+    let hue_width = dna.get_f32_in(0.4, 1.0);
+    let hue_min = dna.get_f32_in(0.0, 1.0 - hue_width);
+    let map = genmap3(complexity, dna);
+    palette(hue_min, hue_width, map)
+}
 
 pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     let basis_weight = { 0.20 };
     let unary_weight = if complexity > 5.0 { 0.30 } else { 0.0 };
     let binary_weight = if complexity > 8.0 { 0.25 } else { 0.0 };
+    let fractal_weight: f32 = if complexity > 10.0 { 0.20 } else { 0.0 };
 
-    let x = dna.get_f32_in(0.0, basis_weight + unary_weight + binary_weight);
+    let x = dna.get_f32_in(
+        0.0,
+        basis_weight + unary_weight + binary_weight + fractal_weight,
+    );
 
     if x < basis_weight {
         let frequency = xerp(1.5, 32.0, dna.get_f32());
@@ -61,7 +74,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             }
         };
         unary_node
-    } else {
+    } else if x < basis_weight + unary_weight + binary_weight {
         let child_complexity = complexity * 0.5 - 1.0;
         let child_a = dna.call(|dna| genmap3(child_complexity, dna));
         let child_b = dna.call(|dna| genmap3(child_complexity, dna));
@@ -80,5 +93,13 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             }
         };
         binary_node
+    } else {
+        let child_complexity = complexity * 0.5 - 1.0;
+        let child_basis = dna.call(|dna| genmap3(child_complexity, dna));
+        let base_f = dna.get_f32_in(1.5, 8.5);
+        let roughness = dna.get_f32_in(0.4, 0.8);
+        let octaves = dna.get_u32_in(2, 8) as usize;
+        let displace = if dna.get_f32() < 0.5 { dna.get_f32_in(0.0, 1.0) } else { 0.0 };
+        fractal(base_f, octaves, roughness, displace, child_basis)
     }
 }
