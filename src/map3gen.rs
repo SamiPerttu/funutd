@@ -8,10 +8,10 @@ use super::voronoi::*;
 use super::*;
 
 pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
-    let hue_width = dna.get_f32_in(0.4, 1.0);
-    let hue_min = dna.get_f32_in(0.0, 1.0 - hue_width);
+    let hue_amount = dna.get_f32_in(0.25, 1.0);
+    let hue_min = dna.get_f32_in(0.000001, 1.0);
     let map = genmap3(complexity, dna);
-    palette(hue_min, hue_width, map)
+    palette(hue_min, hue_amount, map)
 }
 
 pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
@@ -26,17 +26,19 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     );
 
     if x < basis_weight {
+        // Generate 1 octave of something.
+        let seed = dna.get_u32() as u64;
         let frequency = xerp(1.5, 32.0, dna.get_f32());
         let texture: Box<dyn Texture> = match dna.get_u32_in(0, 1) {
-            0 => vnoise(0, frequency, tile_none()),
+            0 => vnoise(seed, frequency, tile_all()),
             _ => {
                 let pattern_x = dna.get_u32_in(0, 12);
                 let pattern_y = dna.get_u32_in(0, 12);
                 let pattern_z = dna.get_u32_in(0, 12);
                 voronoi(
-                    0,
+                    seed,
                     frequency,
-                    tile_none(),
+                    tile_all(),
                     pattern_x as usize,
                     pattern_y as usize,
                     pattern_z as usize,
@@ -45,6 +47,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         };
         texture
     } else if x < basis_weight + unary_weight {
+        // Shape a map with a unary operator.
         let child_complexity = complexity * 0.5 - 1.0;
         let child = dna.call(|dna| genmap3(child_complexity, dna));
         let unary_node = match dna.get_u32_in(0, 4) {
@@ -53,7 +56,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                 saturate(amount, child)
             }
             1 => {
-                let levels = dna.get_f32_in(2.0, 8.0);
+                let levels = dna.get_f32_in(2.0, 10.0);
                 let sharpness: f32 = dna.get_f32();
                 posterize(levels, sharpness, child)
             }
@@ -66,7 +69,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                 vreflect(amount, child)
             }
             _ => {
-                let amount = dna.get_f32_in(2.0, 10.0);
+                let amount = dna.get_f32_in(1.0, 10.0);
                 let x_offset = dna.get_f32_in(-1.0, 1.0);
                 let y_offset = dna.get_f32_in(-1.0, 1.0);
                 let z_offset = dna.get_f32_in(-1.0, 1.0);
@@ -75,6 +78,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         };
         unary_node
     } else if x < basis_weight + unary_weight + binary_weight {
+        // Combine two maps with a binary operator.
         let child_complexity = complexity * 0.5 - 1.0;
         let child_a = dna.call(|dna| genmap3(child_complexity, dna));
         let child_b = dna.call(|dna| genmap3(child_complexity, dna));
@@ -94,12 +98,17 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         };
         binary_node
     } else {
+        // Fractalize map by sampling many octaves.
         let child_complexity = complexity * 0.5 - 1.0;
         let child_basis = dna.call(|dna| genmap3(child_complexity, dna));
         let base_f = dna.get_f32_in(1.5, 8.5);
         let roughness = dna.get_f32_in(0.4, 0.8);
         let octaves = dna.get_u32_in(2, 8) as usize;
-        let displace = if dna.get_f32() < 0.5 { dna.get_f32_in(0.0, 1.0) } else { 0.0 };
+        let displace = if dna.get_f32() < 0.5 {
+            dna.get_f32_in(0.0, 1.0)
+        } else {
+            0.0
+        };
         fractal(base_f, octaves, roughness, displace, child_basis)
     }
 }

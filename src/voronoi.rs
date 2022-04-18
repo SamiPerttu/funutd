@@ -3,21 +3,22 @@ use super::map3base::*;
 use super::math::*;
 use super::*;
 
-pub fn voronoi_pattern(i: usize) -> Vec3a {
+pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
     match i {
-        0 => vec3a(1.0, 0.0, 0.0),
-        1 => vec3a(-1.0, 1.0, 0.0),
-        2 => vec3a(0.0, 1.0, 0.0),
-        3 => vec3a(1.0, 1.0, 0.0),
-        4 => vec3a(0.0, 0.0, 1.0),
-        5 => vec3a(-1.0, 1.0, 1.0),
-        6 => vec3a(1.0, -1.0, 1.0),
-        7 => vec3a(0.0, -1.0, 1.0),
-        8 => vec3a(-1.0, 0.0, 1.0),
-        9 => vec3a(-1.0, -1.0, 1.0),
-        10 => vec3a(1.0, 1.0, 1.0),
-        11 => vec3a(1.0, 0.0, 1.0),
-        _ => vec3a(0.0, 1.0, 1.0),
+        // All of the dot products below are non-negative.
+        0 => v.dot(vec3a(1.0, 0.0, 0.0)) * 2.0 - 1.0,
+        1 => v.dot(vec3a(-1.0, 1.0, 0.0)) * 2.0 - 1.0,
+        2 => v.dot(vec3a(0.0, 1.0, 0.0)) * 2.0 - 1.0,
+        3 => v.dot(vec3a(1.0, 1.0, 0.0)) * 2.0 - 1.0,
+        4 => v.dot(vec3a(0.0, 0.0, 1.0)) * 2.0 - 1.0,
+        5 => v.dot(vec3a(-1.0, 1.0, 1.0)) * 2.0 - 1.0,
+        6 => v.dot(vec3a(1.0, -1.0, 1.0)) * 2.0 - 1.0,
+        7 => v.dot(vec3a(0.0, -1.0, 1.0)) * 2.0 - 1.0,
+        8 => v.dot(vec3a(-1.0, 0.0, 1.0)) * 2.0 - 1.0,
+        9 => v.dot(vec3a(-0.5, -0.5, 1.0)) * 2.0 - 1.0,
+        10 => v.dot(vec3a(0.5, 0.5, 0.5)) * 2.0 - 1.0,
+        11 => v.dot(vec3a(1.0, 0.0, 1.0)) * 2.0 - 1.0,
+        _ => v.dot(vec3a(0.0, 0.5, 0.5)) * 2.0 - 1.0,
     }
 }
 
@@ -186,9 +187,9 @@ impl<H: Hasher> Texture for Voronoi<H> {
         while state.expand_next(&self.hasher) {}
         let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
         vec3a(
-            d_vec.dot(voronoi_pattern(self.pattern_x)),
-            d_vec.dot(voronoi_pattern(self.pattern_y)),
-            d_vec.dot(voronoi_pattern(self.pattern_z)),
+            voronoi_pattern(self.pattern_x, d_vec),
+            voronoi_pattern(self.pattern_y, d_vec),
+            voronoi_pattern(self.pattern_z, d_vec),
         )
     }
 

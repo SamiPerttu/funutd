@@ -25,10 +25,13 @@ use super::*;
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub fn srgb_transfer_function(a: f32) -> f32
-{
+pub fn srgb_transfer_function(a: f32) -> f32 {
     let a = clamp01(a);
-	if 0.0031308 >= a { 12.92 * a } else { 1.055 * pow(a, 0.4166666666666667) - 0.055 }
+    if 0.0031308 >= a {
+        12.92 * a
+    } else {
+        1.055 * pow(a, 0.4166666666666667) - 0.055
+    }
 }
 
 pub fn compute_max_saturation(a: f32, b: f32) -> f32 {
@@ -267,7 +270,7 @@ pub fn okhsl_to_srgb(h: f32, s: f32, l: f32) -> (f32, f32, f32) {
     if l >= 1.0 {
         return (1.0, 1.0, 1.0);
     }
-    if l == 0.0 {
+    if l <= 0.0 {
         return (0.0, 0.0, 0.0);
     }
 
@@ -304,7 +307,11 @@ pub fn okhsl_to_srgb(h: f32, s: f32, l: f32) -> (f32, f32, f32) {
     };
 
     let (r, g, b) = oklab_to_linear_srgb(L, C * a_, C * b_);
-    (srgb_transfer_function(r), srgb_transfer_function(g), srgb_transfer_function(b))
+    (
+        srgb_transfer_function(r),
+        srgb_transfer_function(g),
+        srgb_transfer_function(b),
+    )
 }
 
 pub fn okhsv_to_srgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
@@ -339,7 +346,11 @@ pub fn okhsv_to_srgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     let C = C * scale_L;
 
     let (r, g, b) = oklab_to_linear_srgb(L, C * a_, C * b_);
-    (srgb_transfer_function(r), srgb_transfer_function(g), srgb_transfer_function(b))
+    (
+        srgb_transfer_function(r),
+        srgb_transfer_function(g),
+        srgb_transfer_function(b),
+    )
 }
 
 /// Palette implemented as a 3-D LUT.
@@ -350,9 +361,10 @@ pub struct Palette {
     texture: Box<dyn Texture>,
 }
 
-pub fn palette(hue_min: f32, hue_width: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
-    let mut lut = vec!(vec3(0.0, 0.0, 0.0); 32 * 32 * 32);
-    let hue_max = hue_min + hue_width;
+/// Create palette for the specified range of hues. Hue wraps around at 1.
+pub fn palette(hue_min: f32, hue_amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
+    let mut lut = vec![vec3(0.0, 0.0, 0.0); 32 * 32 * 32];
+    let hue_max = hue_min + hue_amount;
 
     for h in 0..32 {
         let hf = h as f32 / 31.0;
@@ -373,7 +385,7 @@ pub fn palette(hue_min: f32, hue_width: f32, texture: Box<dyn Texture>) -> Box<d
     Box::new(Palette {
         lut,
         hue_min,
-        hue_width,
+        hue_width: hue_amount,
         texture,
     })
 }
@@ -389,8 +401,10 @@ impl Texture for Palette {
         let v = self.texture.at(point, frequency);
         let h = clamp01(v.x * 0.5 + 0.5) * 30.9999;
         let s = clamp01(v.y * 0.5 + 0.5) * 30.9999;
-        // Here we have modified the value calculation. Problem was darkening when value is near zero.
-        // Solution: let value go near zero only when saturation goes near zero.
+        // Here we have modified the value calculation.
+        // Problem was darkening when value is near zero,
+        // which removes too many degrees of freedom.
+        // Solution: let effective value go near zero only when saturation goes near zero.
         let v = lerp(s * 0.5 / 30.9999, 1.0, clamp01(v.z * 0.5 + 0.5)) * 30.9999;
         let hi = floor(h);
         let si = floor(s);

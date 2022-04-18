@@ -5,9 +5,10 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-const WIDTH: u32 = 512;
-const HEIGHT: u32 = 512;
+const WIDTH: u32 = 640;
+const HEIGHT: u32 = 640;
 
+use utd::color::*;
 use utd::dna::*;
 use utd::map3::*;
 use utd::map3base::*;
@@ -89,13 +90,21 @@ impl World {
     /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
     fn draw(&self, frame: &mut [u8]) {
         #[allow(unused_variables)]
-        let texture = posterize(
-            3.0981002,
-            0.6513046,
-            voronoi(0, 7.175018, tile_none(), 10, 3, 1),
+        let texture = palette(
+            0.6901543,
+            0.9025886,
+            posterize(
+                9.943014,
+                0.16815351,
+                rotate(
+                    8.86307,
+                    voronoi(2309937501, 31.571928, tile_all(), 7, 3, 2),
+                    voronoi(2538691872, 2.63204, tile_all(), 6, 5, 7),
+                ),
+            ),
         );
         let mut dna = Dna::new(128, (self.z / 0.02) as u64);
-        let texture = genmap3palette(15.0, &mut dna);
+        let texture = genmap3palette(20.0, &mut dna);
 
         println!("{}", texture.get_code());
 

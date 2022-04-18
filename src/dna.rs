@@ -14,7 +14,7 @@ Procedural generator parameter sets are tree shaped.
 The index for each parameter is hashed from a local tree address.
 Collisions are ignored. Collisions diminish the state space
 available, but we can always use a larger vector of raw data
-to reduce collisions.
+to reduce them.
 
 We keep the current address inside Dna and update it as parameters are drawn.
 */

@@ -95,7 +95,7 @@ impl Texture for Posterize {
         if magnitude > 0.0 {
             let base = magnitude.floor();
             let t = magnitude - base;
-            let power: f32 = 1.0 + 100.0 * squared(squared(self.sharpness));
+            let power: f32 = 1.0 + 50.0 * squared(squared(self.sharpness));
             let p = if t < 0.5 {
                 0.5 * pow(2.0 * t, power)
             } else {
@@ -403,7 +403,7 @@ impl Texture for Fractal {
     }
     fn get_code(&self) -> String {
         format!(
-            "fractal({}, {}, {}, {}, {})",
+            "fractal({}, {}, {}, {3:.7}, {4:})",
             self.base_f,
             self.octaves,
             self.roughness,
