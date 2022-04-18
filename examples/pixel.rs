@@ -91,6 +91,7 @@ impl World {
     fn draw(&self, frame: &mut [u8]) {
         #[allow(unused_variables)]
         let texture = palette(
+            Space::HSL,
             0.6901543,
             0.9025886,
             posterize(
@@ -103,6 +104,9 @@ impl World {
                 ),
             ),
         );
+        /*
+        let texture = palette(0.50937665, 0.7222409, posterize(3.8965485, 0.60872394, softmix3(5.2831173, vnoise(1974317952, 10.774254, tile_all()), voronoi(1974803501, 24.273146, tile_all(), 5, 9, 7))));
+        */
         let mut dna = Dna::new(128, (self.z / 0.02) as u64);
         let texture = genmap3palette(20.0, &mut dna);
 
@@ -113,14 +117,6 @@ impl World {
             let y = (i / WIDTH as usize) as i16;
             let fx: f32 = x as f32 / WIDTH as f32;
             let fy: f32 = y as f32 / HEIGHT as f32;
-
-            //let texture = saturate(10.0, vnoise(0, 5.0, tile_all()));
-            //let texture = reflect(10.0, vec3a(0.0, 0.0, 0.0), vnoise(0, 5.0, tile_xy()));
-            //let texture = vreflect(5.0 + 4.0 * self.phase.sin(), vnoise(1, 10.0, tile_none()));
-            //let texture = overdrive(5.0, vnoise(0, 8.0, tile_all()));
-            //let texture = posterize(3.0, 0.5, vnoise(0, 10.0, tile_none()));
-
-            //let texture = softmix3(3.7292252, vnoise(0, 2.2867033, tile_none()), voronoi(0, 60.37787, tile_none(), 12, 5, 8));
 
             let value = texture.at(vec3a(fx, fy, self.z), None);
 

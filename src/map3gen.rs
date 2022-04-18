@@ -10,12 +10,16 @@ use super::*;
 pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     let hue_amount = dna.get_f32_in(0.25, 1.0);
     let hue_min = dna.get_f32_in(0.000001, 1.0);
+    let space = match dna.get_u32_in(0, 1) {
+        0 => Space::HSL,
+        _ => Space::HSV,
+    };
     let map = genmap3(complexity, dna);
-    palette(hue_min, hue_amount, map)
+    palette(space, hue_min, hue_amount, map)
 }
 
 pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
-    let basis_weight = { 0.20 };
+    let basis_weight = if complexity <= 10.0 { 0.20 } else { 0.0 };
     let unary_weight = if complexity > 5.0 { 0.30 } else { 0.0 };
     let binary_weight = if complexity > 8.0 { 0.25 } else { 0.0 };
     let fractal_weight: f32 = if complexity > 10.0 { 0.20 } else { 0.0 };
@@ -102,10 +106,10 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         let child_complexity = complexity * 0.5 - 1.0;
         let child_basis = dna.call(|dna| genmap3(child_complexity, dna));
         let base_f = dna.get_f32_in(1.5, 8.5);
-        let roughness = dna.get_f32_in(0.4, 0.8);
+        let roughness = xerp(0.4, 0.8, dna.get_f32_in(0.0, 1.0));
         let octaves = dna.get_u32_in(2, 8) as usize;
         let displace = if dna.get_f32() < 0.5 {
-            dna.get_f32_in(0.0, 1.0)
+            dna.get_f32_in(0.0, 0.5)
         } else {
             0.0
         };

@@ -353,16 +353,19 @@ pub fn okhsv_to_srgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     )
 }
 
+pub enum Space { HSL, HSV }
+
 /// Palette implemented as a 3-D LUT.
 pub struct Palette {
     lut: Vec<Vec3>,
     hue_min: f32,
-    hue_width: f32,
+    hue_amount: f32,
+    space: Space,
     texture: Box<dyn Texture>,
 }
 
 /// Create palette for the specified range of hues. Hue wraps around at 1.
-pub fn palette(hue_min: f32, hue_amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
+pub fn palette(space: Space, hue_min: f32, hue_amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     let mut lut = vec![vec3(0.0, 0.0, 0.0); 32 * 32 * 32];
     let hue_max = hue_min + hue_amount;
 
@@ -373,7 +376,10 @@ pub fn palette(hue_min: f32, hue_amount: f32, texture: Box<dyn Texture>) -> Box<
             let sf: f32 = s as f32 / 31.0;
             for v in 0..32 {
                 let vf = v as f32 / 31.0;
-                let (r, g, b) = okhsl_to_srgb(hue, sf, vf);
+                let (r, g, b) = match space {
+                    Space::HSL => okhsl_to_srgb(hue, sf, vf),
+                    Space::HSV => okhsv_to_srgb(hue, sf, vf),
+                };
                 //if h == 0 && s == 16 {
                 //    println!("{} is ({}, {}, {})", vf, r, g, b);
                 //}
@@ -385,7 +391,8 @@ pub fn palette(hue_min: f32, hue_amount: f32, texture: Box<dyn Texture>) -> Box<
     Box::new(Palette {
         lut,
         hue_min,
-        hue_width: hue_amount,
+        hue_amount,
+        space,
         texture,
     })
 }
@@ -435,17 +442,19 @@ impl Texture for Palette {
 
     fn get_code(&self) -> String {
         format!(
-            "palette({}, {}, {})",
+            "palette({}, {}, {}, {})",
+            match self.space { Space::HSL => "Space::HSL", Space::HSV => "Space::HSV" },
             self.hue_min,
-            self.hue_width,
+            self.hue_amount,
             self.texture.get_code()
         )
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "palette({}, {}, {})",
+            "palette({}, {}, {}, {})",
+            match self.space { Space::HSL => "Space::HSL", Space::HSV => "Space::HSV" },
             self.hue_min,
-            self.hue_width,
+            self.hue_amount,
             self.texture.get_basis_code()
         )
     }
