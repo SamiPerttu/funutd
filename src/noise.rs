@@ -1,4 +1,4 @@
-//! Isotropic value noise.
+//! Isotropic value and gradient noises.
 
 use super::hash::*;
 use super::map3base::*;
