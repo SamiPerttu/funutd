@@ -30,7 +30,7 @@ pasted around and subjected to further scrutiny.
 `Dna` objects can be mutated or crossed over to create variations of genotypes
 or to optimize a texture for a purpose.
 
-## Example
+## Examples
 
 ```rust
 palette(
@@ -50,3 +50,23 @@ palette(
 ```
 
 ![](example1.png "texture example")
+
+---
+
+```rust
+palette(
+    Space::HSV,
+    0.7194102,
+    0.21881655,
+    fractal(
+        5.3895693,
+        7,
+        0.5545446,
+        2.5686815,
+        0.0022501,
+        posterize(4.580785, 0.2511709, vnoise_basis(2690581512, tile_all())),
+    ),
+)
+```
+
+![](example2.png "texture example")
