@@ -10,7 +10,7 @@ use super::voronoi::*;
 use super::*;
 
 pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
-    let hue_amount = dna.get_f32_in(0.25, 1.0);
+    let hue_amount = dna.get_f32_in(0.2, 1.0);
     let hue_min = dna.get_f32_in(0.000001, 1.0);
     let space = match dna.get_u32_in(0, 1) {
         0 => Space::HSL,
@@ -24,7 +24,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     let basis_weight = if complexity <= 10.0 { 0.20 } else { 0.0 };
     let unary_weight = if complexity > 5.0 { 0.30 } else { 0.0 };
     let binary_weight = if complexity > 8.0 { 0.25 } else { 0.0 };
-    let fractal_weight: f32 = if complexity > 10.0 { 0.20 } else { 0.0 };
+    let fractal_weight: f32 = if complexity > 10.0 { 0.25 } else { 0.0 };
 
     let x = dna.get_f32_in(
         0.0,

@@ -414,13 +414,13 @@ impl Palette {
 impl Texture for Palette {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let v = self.texture.at(point, frequency);
-        let h = clamp01(v.x * 0.5 + 0.5) * 30.9999;
-        let s = clamp01(v.y * 0.5 + 0.5) * 30.9999;
+        let h = (v.x.tanh() * 0.5 + 0.5) * 30.9999;
+        let s = (v.y.tanh() * 0.5 + 0.5) * 30.9999;
         // Here we have modified the value calculation.
         // Problem was darkening when value is near zero,
         // which removes too many degrees of freedom.
         // Solution: let effective value go near zero only when saturation goes near zero.
-        let v = lerp(s * 0.5 / 30.9999, 1.0, clamp01(v.z * 0.5 + 0.5)) * 30.9999;
+        let v = lerp(s * 0.5 / 30.9999, 1.0, v.z.tanh() * 0.5 + 0.5) * 30.9999;
         let hi = floor(h);
         let si = floor(s);
         let vi = floor(v);
