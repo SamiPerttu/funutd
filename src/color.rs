@@ -353,7 +353,10 @@ pub fn okhsv_to_srgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     )
 }
 
-pub enum Space { HSL, HSV }
+pub enum Space {
+    HSL,
+    HSV,
+}
 
 /// Palette implemented as a 3-D LUT.
 pub struct Palette {
@@ -365,7 +368,12 @@ pub struct Palette {
 }
 
 /// Create palette for the specified range of hues. Hue wraps around at 1.
-pub fn palette(space: Space, hue_min: f32, hue_amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
+pub fn palette(
+    space: Space,
+    hue_min: f32,
+    hue_amount: f32,
+    texture: Box<dyn Texture>,
+) -> Box<dyn Texture> {
     let mut lut = vec![vec3(0.0, 0.0, 0.0); 32 * 32 * 32];
     let hue_max = hue_min + hue_amount;
 
@@ -443,7 +451,10 @@ impl Texture for Palette {
     fn get_code(&self) -> String {
         format!(
             "palette({}, {}, {}, {})",
-            match self.space { Space::HSL => "Space::HSL", Space::HSV => "Space::HSV" },
+            match self.space {
+                Space::HSL => "Space::HSL",
+                Space::HSV => "Space::HSV",
+            },
             self.hue_min,
             self.hue_amount,
             self.texture.get_code()
@@ -452,7 +463,10 @@ impl Texture for Palette {
     fn get_basis_code(&self) -> String {
         format!(
             "palette({}, {}, {}, {})",
-            match self.space { Space::HSL => "Space::HSL", Space::HSV => "Space::HSV" },
+            match self.space {
+                Space::HSL => "Space::HSL",
+                Space::HSV => "Space::HSV",
+            },
             self.hue_min,
             self.hue_amount,
             self.texture.get_basis_code()
