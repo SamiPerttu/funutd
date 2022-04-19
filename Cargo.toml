@@ -1,9 +1,9 @@
 [package]
 name = "funutd"
-description = "Procedural CPU texture library."
+description = "Procedural texture library."
 keywords = ["graphics"]
 license = "MIT OR Apache-2.0"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["SamiPerttu <Sami.Perttu@gmail.com>"]
 homepage = "https://github.com/SamiPerttu/funutd"
 repository = "https://github.com/SamiPerttu/funutd"
