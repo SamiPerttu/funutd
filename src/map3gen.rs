@@ -116,6 +116,14 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         } else {
             0.0
         };
-        fractal(base_f, octaves, roughness, displace, child_basis)
+        let lacunarity = xerp(1.5, 3.0, dna.get_f32());
+        fractal(
+            base_f,
+            octaves,
+            roughness,
+            lacunarity,
+            displace,
+            child_basis,
+        )
     }
 }

@@ -382,6 +382,7 @@ pub struct Fractal {
     base_f: f32,
     octaves: usize,
     roughness: f32,
+    lacunarity: f32,
     displace: f32,
     texture: Box<dyn Texture>,
 }
@@ -399,16 +400,17 @@ impl Texture for Fractal {
             total_w += w;
             w *= self.roughness;
             p += v * self.displace / f;
-            f *= 2.0;
+            f *= self.lacunarity;
         }
         result / sqrt(total_w)
     }
     fn get_code(&self) -> String {
         format!(
-            "fractal({}, {}, {}, {3:.7}, {4:})",
+            "fractal({}, {}, {}, {}, {4:.7}, {5:})",
             self.base_f,
             self.octaves,
             self.roughness,
+            self.lacunarity,
             self.displace,
             self.texture.get_basis_code()
         )
@@ -422,6 +424,7 @@ pub fn fractal(
     base_f: f32,
     octaves: usize,
     roughness: f32,
+    lacunarity: f32,
     displace: f32,
     texture: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
@@ -430,6 +433,7 @@ pub fn fractal(
         base_f,
         octaves,
         roughness,
+        lacunarity,
         displace,
     })
 }
