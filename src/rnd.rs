@@ -1,3 +1,5 @@
+//! Krull64 random number generator.
+
 // LCG multipliers from Steele, G. and Vigna, S.,
 // Computationally Easy, Spectrally Good Multipliers for
 // Congruential Pseudorandom Number Generators (2020).

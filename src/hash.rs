@@ -1,4 +1,4 @@
-// Hash functions. All of the hashes here are permutations.
+//! Hash functions. All of the hashes here are permutations.
 
 /// 32-bit hash by degski. Inverse of hash32a_inverse.
 #[inline]

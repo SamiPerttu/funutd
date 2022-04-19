@@ -1,3 +1,5 @@
+//! Voronoi texture basis.
+
 use super::hash::*;
 use super::map3base::*;
 use super::math::*;

@@ -1,5 +1,5 @@
-// This module contains utility functions for working with
-// LCGs (linear congruential generators).
+//! Utility functions for working with LCGs (linear congruential generators).
+
 use super::math::*;
 
 /// LCG iteration is state <- state * m + p.

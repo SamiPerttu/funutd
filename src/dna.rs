@@ -1,3 +1,5 @@
+//! Parameter system for procedural generation.
+
 use super::*;
 
 /*

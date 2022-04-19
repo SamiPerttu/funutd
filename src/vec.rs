@@ -1,3 +1,5 @@
+//! Adapt vectors to the number hierarchy, convenience definitions.
+
 use super::math::*;
 
 macro_rules! impl_vec32_num {

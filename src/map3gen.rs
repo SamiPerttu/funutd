@@ -1,3 +1,5 @@
+//! Texture generators.
+
 use super::color::*;
 use super::dna::*;
 use super::map3::*;
@@ -73,7 +75,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                 vreflect(amount, child)
             }
             _ => {
-                let amount = dna.get_f32_in(1.0, 10.0);
+                let amount = dna.get_f32_in(1.0, 5.0);
                 let x_offset = dna.get_f32_in(-1.0, 1.0);
                 let y_offset = dna.get_f32_in(-1.0, 1.0);
                 let z_offset = dna.get_f32_in(-1.0, 1.0);

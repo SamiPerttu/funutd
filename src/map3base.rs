@@ -1,3 +1,5 @@
+//! Base definitions for textures.
+
 use super::hash::*;
 use super::math::*;
 use super::*;

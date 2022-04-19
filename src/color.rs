@@ -34,7 +34,7 @@ pub fn srgb_transfer_function(a: f32) -> f32 {
     }
 }
 
-pub fn compute_max_saturation(a: f32, b: f32) -> f32 {
+fn compute_max_saturation(a: f32, b: f32) -> f32 {
     let (k0, k1, k2, k3, k4, wl, wm, ws) = if -1.88170328 * a - 0.80936493 * b > 1.0 {
         (
             1.19086277,
@@ -99,7 +99,7 @@ pub fn compute_max_saturation(a: f32, b: f32) -> f32 {
     S - f * f1 / (f1 * f1 - 0.5 * f * f2)
 }
 
-pub fn oklab_to_linear_srgb(L: f32, a: f32, b: f32) -> (f32, f32, f32) {
+fn oklab_to_linear_srgb(L: f32, a: f32, b: f32) -> (f32, f32, f32) {
     let l_ = L + 0.3963377774 * a + 0.2158037573 * b;
     let m_ = L - 0.1055613458 * a - 0.0638541728 * b;
     let s_ = L - 0.0894841775 * a - 1.2914855480 * b;
@@ -116,7 +116,7 @@ pub fn oklab_to_linear_srgb(L: f32, a: f32, b: f32) -> (f32, f32, f32) {
 }
 
 // returns (L, C)
-pub fn find_cusp(a: f32, b: f32) -> (f32, f32) {
+fn find_cusp(a: f32, b: f32) -> (f32, f32) {
     let S_cusp = compute_max_saturation(a, b);
 
     let (r, g, b) = oklab_to_linear_srgb(1.0, S_cusp * a, S_cusp * b);
@@ -126,7 +126,7 @@ pub fn find_cusp(a: f32, b: f32) -> (f32, f32) {
     (L_cusp, C_cusp)
 }
 
-pub fn find_gamut_intersection(
+fn find_gamut_intersection(
     a: f32,
     b: f32,
     L1: f32,
@@ -203,12 +203,12 @@ pub fn find_gamut_intersection(
 }
 
 // Returns (S, T)
-pub fn to_st(cusp_L: f32, cusp_C: f32) -> (f32, f32) {
+fn to_st(cusp_L: f32, cusp_C: f32) -> (f32, f32) {
     (cusp_C / cusp_L, cusp_C / (1.0 - cusp_L))
 }
 
 // Returns (S, T)
-pub fn get_st_mid(a_: f32, b_: f32) -> (f32, f32) {
+fn get_st_mid(a_: f32, b_: f32) -> (f32, f32) {
     let S = 0.11516993
         + 1.0
             / (7.44778970
@@ -230,7 +230,7 @@ pub fn get_st_mid(a_: f32, b_: f32) -> (f32, f32) {
     (S, T)
 }
 
-pub fn get_cs(L: f32, a_: f32, b_: f32) -> (f32, f32, f32) {
+fn get_cs(L: f32, a_: f32, b_: f32) -> (f32, f32, f32) {
     let (cusp_L, cusp_C) = find_cusp(a_, b_);
 
     let C_max = find_gamut_intersection(a_, b_, L, 1.0, L, cusp_L, cusp_C);
@@ -259,7 +259,7 @@ pub fn get_cs(L: f32, a_: f32, b_: f32) -> (f32, f32, f32) {
     (C_0, C_mid, C_max)
 }
 
-pub fn toe_inv(x: f32) -> f32 {
+fn toe_inv(x: f32) -> f32 {
     let k_1 = 0.206;
     let k_2 = 0.03;
     let k_3 = (1.0 + k_1) / (1.0 + k_2);
@@ -445,6 +445,7 @@ impl Texture for Palette {
         let i0 = lerp(i00, i01, sf);
         let i1 = lerp(i10, i11, sf);
         let i = lerp(i0, i1, hf);
+        // Rescale to -1...1.
         vec3a(i.x * 2.0 - 1.0, i.y * 2.0 - 1.0, i.z * 2.0 - 1.0)
     }
 

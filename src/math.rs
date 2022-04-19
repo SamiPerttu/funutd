@@ -1,3 +1,5 @@
+//! Math traits and functions.
+
 use std::cmp::PartialEq;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 use std::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};

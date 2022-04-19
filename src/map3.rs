@@ -1,3 +1,5 @@
+//! Texture unary and binary operators.
+
 use super::map3base::*;
 use super::math::*;
 use super::*;
