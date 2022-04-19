@@ -10,6 +10,7 @@ pub mod map3base;
 pub mod map3gen;
 pub mod math;
 pub mod noise;
+pub mod prelude;
 pub mod rnd;
 pub mod vec;
 pub mod voronoi;

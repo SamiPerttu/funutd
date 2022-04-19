@@ -8,14 +8,7 @@ use winit_input_helper::WinitInputHelper;
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 640;
 
-use funutd::color::*;
-use funutd::dna::*;
-use funutd::map3::*;
-use funutd::map3base::*;
-use funutd::map3gen::*;
-use funutd::math::*;
-use funutd::voronoi::*;
-use funutd::*;
+use funutd::prelude::*;
 
 /// Application state.
 struct World {
