@@ -74,8 +74,8 @@ impl World {
 
     /// Update the `World` internal state.
     fn update(&mut self) {
-        self.z += 0.001;
-        self.phase += 0.05;
+        self.phase = (self.phase + 1.0 / 32.0) % 1.0;
+        self.z += 1.0 / 32.0;
     }
 
     /// Draw the `World` state to the frame buffer.
@@ -100,10 +100,12 @@ impl World {
         /*
         let texture = palette(Space::HSL, 0.50937665, 0.7222409, posterize(3.8965485, 0.60872394, softmix3(5.2831173, vnoise(1974317952, 10.774254, tile_all()), voronoi(1974803501, 24.273146, tile_all(), 5, 9, 7))));
         */
-        let mut dna = Dna::new(256, (self.z / 0.02) as u64);
+        let mut dna = Dna::new(256, self.z as u64);
         let texture = genmap3palette(20.0, &mut dna);
 
-        println!("{}", texture.get_code());
+        if self.phase > 1.0 / 40.0 && self.phase < 1.0 / 24.0 {
+            println!("{}", texture.get_code());
+        }
 
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
             let x = (i % WIDTH as usize) as i16;

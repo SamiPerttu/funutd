@@ -401,7 +401,7 @@ impl Texture for Fractal {
             p += v * self.displace / f;
             f *= 2.0;
         }
-        result / total_w
+        result / sqrt(total_w)
     }
     fn get_code(&self) -> String {
         format!(
