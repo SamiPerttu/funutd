@@ -111,7 +111,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         let roughness = xerp(0.4, 0.8, dna.get_f32_in(0.0, 1.0));
         let octaves = dna.get_u32_in(2, 8) as usize;
         let displace = if dna.get_f32() < 0.5 {
-            dna.get_f32_in(0.0, 0.5)
+            dna.get_f32_in(0.0, 0.3)
         } else {
             0.0
         };
