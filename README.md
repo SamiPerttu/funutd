@@ -29,3 +29,24 @@ pasted around and subjected to further scrutiny.
 
 `Dna` objects can be mutated or crossed over to create variations of genotypes
 or to optimize a texture for a purpose.
+
+## Example
+
+```rust
+palette(
+    Space::HSL,
+    0.50937665,
+    0.7222409,
+    posterize(
+        3.8965485,
+        0.60872394,
+        softmix3(
+            5.2831173,
+            vnoise(1974317952, 10.774254, tile_all()),
+            voronoi(1974803501, 24.273146, tile_all(), 5, 9, 7),
+        ),
+    ),
+)
+```
+
+![](example1.png "texture example")

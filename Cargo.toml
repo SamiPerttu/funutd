@@ -18,3 +18,12 @@ enum_dispatch = "0.3.8"
 pixels = "0.9.0"
 winit = "0.26.1"
 winit_input_helper = "0.12.0"
+plotters = "0.3.1"
+
+[[example]]
+name = "plot"
+path = "examples/plot.rs"
+
+[[example]]
+name = "pixel"
+path = "examples/pixel.rs"
