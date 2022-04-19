@@ -35,8 +35,9 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         // Generate 1 octave of something.
         let seed = dna.get_u32() as u64;
         let frequency = xerp(1.5, 32.0, dna.get_f32());
-        let texture: Box<dyn Texture> = match dna.get_u32_in(0, 1) {
-            0 => vnoise(seed, frequency, tile_all()),
+        let texture: Box<dyn Texture> = match dna.get_u32_in(0, 4) {
+            0 | 1 => noise(seed, frequency, tile_all()),
+            2 => vnoise(seed, frequency, tile_all()),
             _ => {
                 let pattern_x = dna.get_u32_in(0, 12);
                 let pattern_y = dna.get_u32_in(0, 12);
