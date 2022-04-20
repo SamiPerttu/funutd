@@ -33,12 +33,12 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     let binary_weight = if complexity > 8.0 { 0.25 } else { 0.0 };
     let fractal_weight: f32 = if complexity > 8.0 { 0.25 } else { 0.0 };
 
-    let x = dna.get_f32_in(
+    let choice = dna.get_f32_in(
         0.0,
         basis_weight + unary_weight + binary_weight + fractal_weight,
     );
 
-    if x < basis_weight {
+    if choice < basis_weight {
         // Generate 1 octave of something.
         let seed = dna.get_u32() as u64;
         let frequency = xerp(4.0, 32.0, dna.get_f32());
@@ -60,7 +60,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             }
         };
         texture
-    } else if x < basis_weight + unary_weight {
+    } else if choice < basis_weight + unary_weight {
         // Shape a map with a unary operator.
         let child_complexity = complexity * 0.5 - 1.0;
         let child = dna.call(|dna| genmap3(child_complexity, dna));
@@ -92,7 +92,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             }
         };
         unary_node
-    } else if x < basis_weight + unary_weight + binary_weight {
+    } else if choice < basis_weight + unary_weight + binary_weight {
         // Combine two maps with a binary operator.
         let child_complexity = complexity * 0.5 - 1.0;
         let child_a = dna.call(|dna| genmap3(child_complexity, dna));

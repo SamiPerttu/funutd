@@ -44,9 +44,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             plotting_area.draw_pixel(
                 (x as f64 / 1024.0, y as f64 / 1024.0),
                 &RGBColor(
-                    floor(u.x * 255.9) as u8,
-                    floor(u.y * 255.9) as u8,
-                    floor(u.z * 255.9) as u8,
+                    (u.x * 255.9).floor() as u8,
+                    (u.y * 255.9).floor() as u8,
+                    (u.z * 255.9).floor() as u8,
                 ),
             )?;
         }
@@ -91,9 +91,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             plotting_area.draw_pixel(
                 (x as f64 / 1024.0, y as f64 / 1024.0),
                 &RGBColor(
-                    floor(u.x * 255.9) as u8,
-                    floor(u.y * 255.9) as u8,
-                    floor(u.z * 255.9) as u8,
+                    (u.x * 255.999).floor() as u8,
+                    (u.y * 255.999).floor() as u8,
+                    (u.z * 255.999).floor() as u8,
                 ),
             )?;
         }

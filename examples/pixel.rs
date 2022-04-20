@@ -9,6 +9,7 @@ const WIDTH: u32 = 640;
 const HEIGHT: u32 = 640;
 
 use funutd::prelude::*;
+use funutd::math::*;
 
 /// Application state.
 struct World {
