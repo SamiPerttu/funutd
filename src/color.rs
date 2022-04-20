@@ -363,6 +363,7 @@ pub struct Palette {
     lut: Vec<Vec3>,
     hue_min: f32,
     hue_amount: f32,
+    value_min: f32,
     space: Space,
     texture: Box<dyn Texture>,
 }
@@ -372,10 +373,12 @@ pub fn palette(
     space: Space,
     hue_min: f32,
     hue_amount: f32,
+    value_min: f32,
     texture: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
     let mut lut = vec![vec3(0.0, 0.0, 0.0); 32 * 32 * 32];
     let hue_max = hue_min + hue_amount;
+    let value_max = 1.0;
 
     for h in 0..32 {
         let hf = h as f32 / 31.0;
@@ -383,7 +386,7 @@ pub fn palette(
         for s in 0..32 {
             let sf: f32 = s as f32 / 31.0;
             for v in 0..32 {
-                let vf = v as f32 / 31.0;
+                let vf = lerp(value_min, value_max, v as f32 / 31.0);
                 let (r, g, b) = match space {
                     Space::HSL => okhsl_to_srgb(hue, sf, vf),
                     Space::HSV => okhsv_to_srgb(hue, sf, vf),
@@ -400,6 +403,7 @@ pub fn palette(
         lut,
         hue_min,
         hue_amount,
+        value_min,
         space,
         texture,
     })
@@ -414,13 +418,17 @@ impl Palette {
 impl Texture for Palette {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let v = self.texture.at(point, frequency);
-        let h = ((v.x * 1.2).tanh() * 0.5 + 0.5) * 30.9999;
-        let s = ((v.y * 1.2).tanh() * 0.5 + 0.5) * 30.9999;
+        let h = clamp01((v.x * 0.8).tanh() * 1.2 * 0.5 + 0.5) * 30.9999;
+        let s = clamp01((v.y * 0.8).tanh() * 1.2 * 0.5 + 0.5) * 30.9999;
         // Here we have modified the value calculation.
         // Problem was darkening when value is near zero,
         // which removes too many degrees of freedom.
         // Solution: let effective value go near zero only when saturation goes near zero.
-        let v = lerp(s * 0.5 / 30.9999, 1.0, (v.z * 1.2).tanh() * 0.5 + 0.5) * 30.9999;
+        let v = lerp(
+            s * 0.5 / 30.9999,
+            1.0,
+            clamp01((v.z * 0.8).tanh() * 1.2 * 0.5 + 0.5),
+        ) * 30.9999;
         let hi = floor(h);
         let si = floor(s);
         let vi = floor(v);
@@ -451,25 +459,27 @@ impl Texture for Palette {
 
     fn get_code(&self) -> String {
         format!(
-            "palette({}, {}, {}, {})",
+            "palette({}, {:?}, {:?}, {:?}, {})",
             match self.space {
                 Space::HSL => "Space::HSL",
                 Space::HSV => "Space::HSV",
             },
             self.hue_min,
             self.hue_amount,
+            self.value_min,
             self.texture.get_code()
         )
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "palette({}, {}, {}, {})",
+            "palette({}, {:?}, {:?}, {:?}, {})",
             match self.space {
                 Space::HSL => "Space::HSL",
                 Space::HSV => "Space::HSV",
             },
             self.hue_min,
             self.hue_amount,
+            self.value_min,
             self.texture.get_basis_code()
         )
     }

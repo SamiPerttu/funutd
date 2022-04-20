@@ -52,7 +52,7 @@ impl Texture for Reflect {
     }
     fn get_code(&self) -> String {
         format!(
-            "reflect({}, Vec3a({}, {}, {}), {})",
+            "reflect({}, vec3a({:?}, {:?}, {:?}), {})",
             self.amount,
             self.offset.x,
             self.offset.y,
@@ -62,7 +62,7 @@ impl Texture for Reflect {
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "reflect({}, Vec3a({}, {}, {}), {})",
+            "reflect({}, vec3a({:?}, {:?}, {:?}), {})",
             self.amount,
             self.offset.x,
             self.offset.y,
@@ -232,7 +232,7 @@ impl Texture for Rotate {
     }
     fn get_code(&self) -> String {
         format!(
-            "rotate({}, {}, {})",
+            "rotate({:?}, {}, {})",
             self.amount,
             self.texture_a.get_code(),
             self.texture_b.get_code()
@@ -240,7 +240,7 @@ impl Texture for Rotate {
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "rotate({}, {}, {})",
+            "rotate({:?}, {}, {})",
             self.amount,
             self.texture_a.get_basis_code(),
             self.texture_b.get_basis_code()
@@ -349,7 +349,7 @@ impl Texture for Displace {
     }
     fn get_code(&self) -> String {
         format!(
-            "displace({}, {}, {})",
+            "displace({:?}, {}, {})",
             self.amount,
             self.texture_a.get_code(),
             self.texture_b.get_code()
@@ -357,7 +357,7 @@ impl Texture for Displace {
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "displace({}, {}, {})",
+            "displace({:?}, {}, {})",
             self.amount,
             self.texture_a.get_basis_code(),
             self.texture_b.get_basis_code()
@@ -406,7 +406,7 @@ impl Texture for Fractal {
     }
     fn get_code(&self) -> String {
         format!(
-            "fractal({}, {}, {}, {}, {4:.7}, {5:})",
+            "fractal({:?}, {}, {:?}, {:?}, {:?}, {})",
             self.base_f,
             self.octaves,
             self.roughness,

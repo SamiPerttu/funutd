@@ -37,8 +37,12 @@ impl Dna {
     pub fn new(size: usize, seed: u64) -> Dna {
         let mut rnd = Rnd::from_u64(seed);
         let mut data = Vec::with_capacity(size);
-        for _ in 0..size {
-            data.push(rnd.next_u32());
+        for i in 0..size / 2 {
+            let x = rnd.next_u64();
+            data.push(x as u32);
+            if i + 1 < size / 2 || size & 1 == 0 {
+                data.push((x >> 32) as u32);
+            }
         }
         Dna {
             address: vec![0],
@@ -93,6 +97,7 @@ impl Dna {
     /// Returns an f32 parameter in right exclusive range [0, 1[.
     pub fn get_f32(&mut self) -> f32 {
         let index = self.draw_index();
+        //println!("draw at index {}, depth {}, local {}", index, self.address.len(), self.address.last().unwrap());
         self.data[index] as f32 / ((1u64 << 32) as f32)
     }
 
