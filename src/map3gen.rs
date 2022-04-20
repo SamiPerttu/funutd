@@ -29,9 +29,9 @@ pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
 
 pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     let basis_weight = if complexity <= 10.0 { 0.25 } else { 0.0 };
-    let unary_weight = if complexity > 5.0 { 0.30 } else { 0.0 };
-    let binary_weight = if complexity > 8.0 { 0.25 } else { 0.0 };
-    let fractal_weight: f32 = if complexity > 8.0 { 0.25 } else { 0.0 };
+    let unary_weight = if complexity >= 5.0 { 0.30 } else { 0.0 };
+    let binary_weight = if complexity >= 8.0 { 0.25 } else { 0.0 };
+    let fractal_weight: f32 = if complexity >= 9.0 { 0.25 } else { 0.0 };
 
     let choice = dna.get_f32_in(
         0.0,
@@ -114,7 +114,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         binary_node
     } else {
         // Fractalize map by sampling many octaves.
-        let child_complexity = min(10.0, complexity * 0.5 - 1.0);
+        let child_complexity = min(8.0, complexity * 0.5 - 1.0);
         let child_basis = dna.call(|dna| genmap3(child_complexity, dna));
         let base_f = dna.get_f32_in(1.5, 8.5);
         let roughness = xerp(0.4, 0.8, dna.get_f32_in(0.0, 1.0));
