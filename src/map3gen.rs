@@ -14,7 +14,7 @@ pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         0 => Space::HSL,
         _ => Space::HSV,
     };
-    let hue_amount = dna.get_f32_in(0.2, 1.0);
+    let hue_amount = xerp(0.2, 1.0, dna.get_f32());
     let hue_min = dna.get_f32_in(0.0, 1.0);
     let value_min = dna.get_f32_in(
         0.0,
@@ -23,15 +23,16 @@ pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             Space::HSL => 0.5,
         },
     );
+    let saturation = dna.get_f32_in(0.0, 1.0);
     let map = genmap3(complexity, dna);
-    palette(space, hue_min, hue_amount, value_min, map)
+    palette(space, hue_min, hue_amount, value_min, saturation, map)
 }
 
 pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
-    let basis_weight = if complexity <= 10.0 { 0.25 } else { 0.0 };
-    let unary_weight = if complexity >= 5.0 { 0.30 } else { 0.0 };
-    let binary_weight = if complexity >= 8.0 { 0.25 } else { 0.0 };
-    let fractal_weight: f32 = if complexity >= 9.0 { 0.25 } else { 0.0 };
+    let basis_weight = if complexity <= 10.0 { 1.5 } else { 0.0 };
+    let unary_weight = if complexity >= 5.0 { 1.0 } else { 0.0 };
+    let binary_weight = if complexity >= 8.0 { 1.0 } else { 0.0 };
+    let fractal_weight: f32 = if complexity >= 9.0 { 0.8 } else { 0.0 };
 
     let choice = dna.get_f32_in(
         0.0,
@@ -88,7 +89,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                 let x_offset = dna.get_f32_in(-1.0, 1.0);
                 let y_offset = dna.get_f32_in(-1.0, 1.0);
                 let z_offset = dna.get_f32_in(-1.0, 1.0);
-                reflect(amount, vec3a(x_offset, y_offset, z_offset), child)
+                reflect(amount, vec3(x_offset, y_offset, z_offset), child)
             }
         };
         unary_node
@@ -97,7 +98,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         let child_complexity = complexity * 0.5 - 1.0;
         let child_a = dna.call(|dna| genmap3(child_complexity, dna));
         let child_b = dna.call(|dna| genmap3(child_complexity, dna));
-        let binary_node = match dna.get_u32_in(0, 2) {
+        let binary_node = match dna.get_u32_in(0, 3) {
             0 => {
                 let amount = dna.get_f32_in(3.0, 10.0);
                 rotate(amount, child_a, child_b)
@@ -105,6 +106,10 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             1 => {
                 let amount = dna.get_f32_in(1.0, 10.0);
                 softmix3(amount, child_a, child_b)
+            }
+            2 => {
+                let width = xerp(0.5, 3.0, dna.get_f32());
+                layer(width, child_a, child_b)
             }
             _ => {
                 let amount = dna.get_f32_in(0.05, 0.25);
@@ -119,8 +124,13 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         let base_f = dna.get_f32_in(1.5, 8.5);
         let roughness = xerp(0.4, 0.8, dna.get_f32_in(0.0, 1.0));
         let octaves = dna.get_u32_in(2, 8) as usize;
-        let displace = if dna.get_f32() < 0.5 {
-            dna.get_f32_in(0.0, 0.3)
+        let displace = if dna.get_f32() < 0.333 {
+            dna.get_f32_in(0.0, 0.25)
+        } else {
+            0.0
+        };
+        let layer = if dna.get_f32() < 0.333 {
+            xerp(0.5, 3.0, dna.get_f32())
         } else {
             0.0
         };
@@ -131,7 +141,13 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             roughness,
             lacunarity,
             displace,
+            layer,
             child_basis,
         )
     }
 }
+/*
+
+palette(Space::HSL, 0.40690064, 0.81453514, 0.48331845, 0.32949862, fractal(3.4102457, 7, 0.4548667, 2.789417, 0.0, 0.0, vnoise_basis(2316030952, tile_all())))
+palette(Space::HSV, 0.11138, 0.712035, 0.36828744, 0.051674474, displace(0.10156162, rotate(9.893959, noise(4137245708, 8.33033, tile_all()), voronoi(1284792858, 4.5874896, tile_all(), 7, 3, 3)), fractal(5.103115, 4, 0.47705963, 2.7184772, 0.0, 1.3609127, voronoi_basis(749463054, tile_all(), 5, 10, 2))))
+*/

@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         0.50937665,
         0.7222409,
         0.0,
+        1.0,
         posterize(
             3.8965485,
             0.60872394,
@@ -74,12 +75,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         0.7194102,
         0.21881655,
         0.0,
+        1.0,
         fractal(
             5.3895693,
             7,
             0.5545446,
             2.5686815,
             0.0022501,
+            0.0,
             posterize(4.580785, 0.2511709, vnoise_basis(2690581512, tile_all())),
         ),
     );

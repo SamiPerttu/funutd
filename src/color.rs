@@ -364,6 +364,7 @@ pub struct Palette {
     hue_min: f32,
     hue_amount: f32,
     value_min: f32,
+    saturation: f32,
     space: Space,
     texture: Box<dyn Texture>,
 }
@@ -374,6 +375,7 @@ pub fn palette(
     hue_min: f32,
     hue_amount: f32,
     value_min: f32,
+    saturation: f32,
     texture: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
     let mut lut = vec![vec3(0.0, 0.0, 0.0); 32 * 32 * 32];
@@ -404,6 +406,7 @@ pub fn palette(
         hue_min,
         hue_amount,
         value_min,
+        saturation,
         space,
         texture,
     })
@@ -417,18 +420,20 @@ impl Palette {
 
 impl Texture for Palette {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let v = self.texture.at(point, frequency);
-        let h = clamp01((v.x * 0.8).tanh() * 1.2 * 0.5 + 0.5) * 30.9999;
-        let s = clamp01((v.y * 0.8).tanh() * 1.2 * 0.5 + 0.5) * 30.9999;
+        let u = self.texture.at(point, frequency);
+        //return vec3a(clamp11(u.x), clamp11(u.y), clamp11(u.z));
+        let h = clamp01(u.x * 0.7 * 0.5 + 0.5);
+        let s = clamp01((u.y).tanh() * 0.5 + 0.5);
         // Here we have modified the value calculation.
         // Problem was darkening when value is near zero,
         // which removes too many degrees of freedom.
         // Solution: let effective value go near zero only when saturation goes near zero.
-        let v = lerp(
-            s * 0.5 / 30.9999,
-            1.0,
-            clamp01((v.z * 0.8).tanh() * 1.2 * 0.5 + 0.5),
-        ) * 30.9999;
+        let v = lerp(s * 0.5, 1.0, clamp01((u.z * 0.8).tanh() * 1.2 * 0.5 + 0.5));
+        // Saturation damping.
+        let s = s * lerp(1.0, self.saturation, h);
+        let h = h * 30.9999;
+        let s = s * 30.9999;
+        let v = v * 30.9999;
         let hi = floor(h);
         let si = floor(s);
         let vi = floor(v);
@@ -459,7 +464,7 @@ impl Texture for Palette {
 
     fn get_code(&self) -> String {
         format!(
-            "palette({}, {:?}, {:?}, {:?}, {})",
+            "palette({}, {:?}, {:?}, {:?}, {:?}, {})",
             match self.space {
                 Space::HSL => "Space::HSL",
                 Space::HSV => "Space::HSV",
@@ -467,12 +472,13 @@ impl Texture for Palette {
             self.hue_min,
             self.hue_amount,
             self.value_min,
+            self.saturation,
             self.texture.get_code()
         )
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "palette({}, {:?}, {:?}, {:?}, {})",
+            "palette({}, {:?}, {:?}, {:?}, {:?}, {})",
             match self.space {
                 Space::HSL => "Space::HSL",
                 Space::HSV => "Space::HSV",
@@ -480,6 +486,7 @@ impl Texture for Palette {
             self.hue_min,
             self.hue_amount,
             self.value_min,
+            self.saturation,
             self.texture.get_basis_code()
         )
     }

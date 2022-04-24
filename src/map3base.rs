@@ -67,6 +67,18 @@ pub fn hash_11(seed: u64) -> Vec3a {
         - Vec3a::one()
 }
 
+/// Returns a pseudorandom unit length vector.
+pub fn hash_unit(mut seed: u64) -> Vec3a {
+    loop {
+        let v = hash_11(seed);
+        let length2 = v.length_squared();
+        if length2 <= 1.0 {
+            return if length2 > 0.0 { v / sqrt(length2) } else { v };
+        }
+        seed = hash64d(seed);
+    }
+}
+
 /// This hasher does not tile on any axis. Frequencies are not rounded to nearest integer.
 #[derive(Clone)]
 pub struct TileNone {}

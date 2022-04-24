@@ -138,7 +138,7 @@ impl<H: Hasher> Texture for Noise<H> {
                         if distance2 < radius * radius {
                             let distance = sqrt(distance2) / radius;
                             let color = hash_11(hash);
-                            let gradient = hash_11(hash64b(hash));
+                            let gradient = hash_unit(hash64b(hash));
                             let blend = 1.0 - smooth5(distance);
                             result += color * blend * gradient.dot(p + offset);
                         }
@@ -149,7 +149,7 @@ impl<H: Hasher> Texture for Noise<H> {
                 }
             }
         }
-        result
+        result * 2.0
     }
 
     fn get_code(&self) -> String {

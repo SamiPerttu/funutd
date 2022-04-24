@@ -52,7 +52,7 @@ impl Texture for Reflect {
     }
     fn get_code(&self) -> String {
         format!(
-            "reflect({}, vec3a({:?}, {:?}, {:?}), {})",
+            "reflect({}, vec3({:?}, {:?}, {:?}), {})",
             self.amount,
             self.offset.x,
             self.offset.y,
@@ -62,7 +62,7 @@ impl Texture for Reflect {
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "reflect({}, vec3a({:?}, {:?}, {:?}), {})",
+            "reflect({}, vec3({:?}, {:?}, {:?}), {})",
             self.amount,
             self.offset.x,
             self.offset.y,
@@ -75,10 +75,10 @@ impl Texture for Reflect {
 /// Applies a wavy function to texture values with an offset, which can
 /// spread and reflect components. Amount is the scale (amount > 0),
 /// roughly corresponding to number of reflections.
-pub fn reflect(amount: f32, offset: Vec3a, texture: Box<dyn Texture>) -> Box<dyn Texture> {
+pub fn reflect(amount: f32, offset: Vec3, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     Box::new(Reflect {
         amount,
-        offset,
+        offset: offset.into(),
         texture,
     })
 }
@@ -280,7 +280,7 @@ impl Texture for Softmix3 {
     }
     fn get_code(&self) -> String {
         format!(
-            "softmix3({}, {}, {})",
+            "softmix3({:?}, {}, {})",
             self.amount,
             self.texture_a.get_code(),
             self.texture_b.get_code()
@@ -288,7 +288,7 @@ impl Texture for Softmix3 {
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "softmix3({}, {}, {})",
+            "softmix3({:?}, {}, {})",
             self.amount,
             self.texture_a.get_basis_code(),
             self.texture_b.get_basis_code()
@@ -304,6 +304,56 @@ pub fn softmix3(
     assert!(amount > 0.0);
     Box::new(Softmix3 {
         amount,
+        texture_a,
+        texture_b,
+    })
+}
+
+/// Layers one texture on another with weight depending on distance between texture values.
+pub struct Layer {
+    width: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
+}
+
+impl Texture for Layer {
+    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let u = self.texture_a.at(point, frequency);
+        let v = self.texture_b.at(point, frequency);
+        let d = u - v;
+        let distance = d.length();
+        if distance < self.width {
+            u + v * smooth3(1.0 - distance / self.width)
+        } else {
+            u
+        }
+    }
+    fn get_code(&self) -> String {
+        format!(
+            "layer({:?}, {}, {})",
+            self.width,
+            self.texture_a.get_code(),
+            self.texture_b.get_code()
+        )
+    }
+    fn get_basis_code(&self) -> String {
+        format!(
+            "layer({:?}, {}, {})",
+            self.width,
+            self.texture_a.get_basis_code(),
+            self.texture_b.get_basis_code()
+        )
+    }
+}
+
+pub fn layer(
+    width: f32,
+    texture_a: Box<dyn Texture>,
+    texture_b: Box<dyn Texture>,
+) -> Box<dyn Texture> {
+    assert!(width > 0.0);
+    Box::new(Layer {
+        width,
         texture_a,
         texture_b,
     })
@@ -384,6 +434,7 @@ pub struct Fractal {
     roughness: f32,
     lacunarity: f32,
     displace: f32,
+    layer: f32,
     texture: Box<dyn Texture>,
 }
 
@@ -394,24 +445,36 @@ impl Texture for Fractal {
         let mut p = point;
         let mut w = 1.0;
         let mut total_w = 0.0;
-        for _ in 0..self.octaves {
+        for i in 0..self.octaves {
             let v = self.texture.at(p, Some(f));
-            result += v * w;
-            total_w += w;
+            let weight = if i == 0 || self.layer == 0.0 {
+                1.0
+            } else {
+                let layer_diff = result / total_w - v;
+                let layer_distance = layer_diff.length();
+                if layer_distance < self.layer {
+                    1.0 - smooth3(layer_distance / self.layer)
+                } else {
+                    0.0
+                }
+            };
+            result += v * w * weight;
+            total_w += w * weight;
+            p += v * self.displace * weight / f;
             w *= self.roughness;
-            p += v * self.displace / f;
             f *= self.lacunarity;
         }
         result / sqrt(total_w)
     }
     fn get_code(&self) -> String {
         format!(
-            "fractal({:?}, {}, {:?}, {:?}, {:?}, {})",
+            "fractal({:?}, {}, {:?}, {:?}, {:?}, {:?}, {})",
             self.base_f,
             self.octaves,
             self.roughness,
             self.lacunarity,
             self.displace,
+            self.layer,
             self.texture.get_basis_code()
         )
     }
@@ -426,6 +489,7 @@ pub fn fractal(
     roughness: f32,
     lacunarity: f32,
     displace: f32,
+    layer: f32,
     texture: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
     Box::new(Fractal {
@@ -435,5 +499,6 @@ pub fn fractal(
         roughness,
         lacunarity,
         displace,
+        layer,
     })
 }
