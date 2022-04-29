@@ -43,14 +43,27 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         // Generate 1 octave of something.
         let seed = dna.get_u32() as u64;
         let frequency = xerp(4.0, 32.0, dna.get_f32());
-        let texture: Box<dyn Texture> = match dna.get_u32_in(0, 4) {
+        let texture: Box<dyn Texture> = match dna.get_u32_in(0, 5) {
             0 | 1 => noise(seed, frequency, tile_all()),
             2 => vnoise(seed, frequency, tile_all()),
-            _ => {
-                let pattern_x = dna.get_u32_in(0, 12);
-                let pattern_y = dna.get_u32_in(0, 12);
-                let pattern_z = dna.get_u32_in(0, 12);
+            3 | 4 => {
+                let pattern_x = dna.get_u32_in(0, 25);
+                let pattern_y = dna.get_u32_in(0, 25);
+                let pattern_z = dna.get_u32_in(0, 25);
                 voronoi(
+                    seed,
+                    frequency,
+                    tile_all(),
+                    pattern_x as usize,
+                    pattern_y as usize,
+                    pattern_z as usize,
+                )
+            },
+            _ => {
+                let pattern_x = dna.get_u32_in(0, 25);
+                let pattern_y = dna.get_u32_in(0, 25);
+                let pattern_z = dna.get_u32_in(0, 25);
+                camo(
                     seed,
                     frequency,
                     tile_all(),
@@ -146,8 +159,3 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         )
     }
 }
-/*
-
-palette(Space::HSL, 0.40690064, 0.81453514, 0.48331845, 0.32949862, fractal(3.4102457, 7, 0.4548667, 2.789417, 0.0, 0.0, vnoise_basis(2316030952, tile_all())))
-palette(Space::HSV, 0.11138, 0.712035, 0.36828744, 0.051674474, displace(0.10156162, rotate(9.893959, noise(4137245708, 8.33033, tile_all()), voronoi(1284792858, 4.5874896, tile_all(), 7, 3, 3)), fractal(5.103115, 4, 0.47705963, 2.7184772, 0.0, 1.3609127, voronoi_basis(749463054, tile_all(), 5, 10, 2))))
-*/

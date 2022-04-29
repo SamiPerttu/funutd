@@ -6,21 +6,27 @@ use super::math::*;
 use super::*;
 
 pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
-    match i {
+    debug_assert!(i < 26);
+    let p = match i % 13 {
         // All of the dot products below are non-negative.
         0 => v.dot(vec3a(1.0, 0.0, 0.0)) * 2.0 - 1.0,
         1 => v.dot(vec3a(-1.0, 1.0, 0.0)) * 2.0 - 1.0,
         2 => v.dot(vec3a(0.0, 1.0, 0.0)) * 2.0 - 1.0,
         3 => v.dot(vec3a(0.5, 0.5, 0.0)) * 2.0 - 1.0,
-        4 => v.dot(vec3a(0.0, 0.0, 1.0)) * 2.0 - 1.0,
-        5 => v.dot(vec3a(-1.0, 1.0, 1.0)) * 2.0 - 1.0,
+        4 => v.dot(vec3a(0.0, 0.0, 1.0)) * 1.5 - 1.0,
+        5 => v.dot(vec3a(-1.0, 1.0, 1.0)) * 1.5 - 1.0,
         6 => v.dot(vec3a(1.0, -1.0, 1.0)) * 2.0 - 1.0,
         7 => v.dot(vec3a(0.0, -1.0, 1.0)) * 2.0 - 1.0,
         8 => v.dot(vec3a(-1.0, 0.0, 1.0)) * 2.0 - 1.0,
         9 => v.dot(vec3a(-0.5, -0.5, 1.0)) * 2.0 - 1.0,
-        10 => v.dot(vec3a(0.5, 0.5, 0.5)) * 2.0 - 1.0,
+        10 => v.dot(vec3a(0.5, 0.5, 0.5)) * 1.5 - 1.0,
         11 => v.dot(vec3a(0.5, 0.0, 0.5)) * 2.0 - 1.0,
-        _ => v.dot(vec3a(0.0, 0.5, 0.5)) * 2.0 - 1.0,
+        _ => v.dot(vec3a(0.0, 0.5, 0.5)) * 1.5 - 1.0,
+    };
+    if i < 13 {
+        p
+    } else {
+        -p
     }
 }
 
@@ -34,6 +40,8 @@ pub struct VoronoiState {
     distance1: f32,
     distance2: f32,
     distance3: f32,
+    color: Vec3a,
+    color_weight: f32,
 }
 
 impl VoronoiState {
@@ -45,8 +53,12 @@ impl VoronoiState {
             distance1: f32::INFINITY,
             distance2: f32::INFINITY,
             distance3: f32::INFINITY,
+            color: vec3a(0.0, 0.0, 0.0),
+            color_weight: 0.0,
         }
     }
+
+    pub fn color(&self) -> Vec3a { self.color / self.color_weight }
 
     pub fn distance_1(&self) -> f32 {
         self.distance1
@@ -140,7 +152,7 @@ impl VoronoiState {
 
         let n = match hash & 7 {
             0 | 1 | 2 | 3 => 1,
-            5 | 6 => 2,
+            4 | 5 | 6 => 2,
             _ => 3,
         };
         let offset = Vec3a::new(
@@ -165,6 +177,10 @@ impl VoronoiState {
                     self.distance3 = distance;
                 }
             }
+            let color_w = exp(50.0 - distance2 * 25.0);
+            let color = hash_11(hash64a(hash));
+            self.color += color * color_w;
+            self.color_weight += color_w;
             if i + 1 < n {
                 hash = hash64c(hash);
             }
@@ -245,6 +261,89 @@ pub fn voronoi_basis<H: 'static + Hasher>(
     pattern_z: usize,
 ) -> Box<dyn Texture> {
     Box::new(Voronoi {
+        seed,
+        frequency: 1.0,
+        hasher,
+        pattern_x,
+        pattern_y,
+        pattern_z,
+    })
+}
+
+pub struct Camo<H: Hasher> {
+    seed: u64,
+    frequency: f32,
+    hasher: H,
+    pattern_x: usize,
+    pattern_y: usize,
+    pattern_z: usize,
+}
+
+impl<H: Hasher> Texture for Camo<H> {
+    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let frequency = frequency.unwrap_or(self.frequency);
+        let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
+        state.process_cell(&self.hasher, 0, 0, 0);
+        while state.expand_next(&self.hasher) {}
+        let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
+        let color = state.color();
+        vec3a(
+            voronoi_pattern(self.pattern_x, d_vec) * color.x,
+            voronoi_pattern(self.pattern_y, d_vec) * color.y,
+            voronoi_pattern(self.pattern_z, d_vec) * color.z,
+        )
+    }
+
+    fn get_code(&self) -> String {
+        format!(
+            "camo({}, {}, {}, {}, {}, {})",
+            self.seed,
+            self.frequency,
+            self.hasher.get_code(),
+            self.pattern_x,
+            self.pattern_y,
+            self.pattern_z
+        )
+    }
+
+    fn get_basis_code(&self) -> String {
+        format!(
+            "camo_basis({}, {}, {}, {}, {})",
+            self.seed,
+            self.hasher.get_code(),
+            self.pattern_x,
+            self.pattern_y,
+            self.pattern_z
+        )
+    }
+}
+
+pub fn camo<H: 'static + Hasher>(
+    seed: u64,
+    frequency: f32,
+    hasher: H,
+    pattern_x: usize,
+    pattern_y: usize,
+    pattern_z: usize,
+) -> Box<dyn Texture> {
+    Box::new(Camo {
+        seed,
+        frequency,
+        hasher,
+        pattern_x,
+        pattern_y,
+        pattern_z,
+    })
+}
+
+pub fn camo_basis<H: 'static + Hasher>(
+    seed: u64,
+    hasher: H,
+    pattern_x: usize,
+    pattern_y: usize,
+    pattern_z: usize,
+) -> Box<dyn Texture> {
+    Box::new(Camo {
         seed,
         frequency: 1.0,
         hasher,

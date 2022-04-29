@@ -92,7 +92,12 @@ impl World {
 
         //let texture = palette(Space::HSV, 0.0, 1.0, 0.0, 0.0, fractal(2.0, 8, 0.5, 2.0, 0.0, 0.0, noise_basis(1, tile_none())));
         //let texture = palette(Space::HSV, 0.0, 1.0, 0.0, 1.0, fractal(2.0, 8, 0.5, 2.0, 0.0, 0.0, vnoise_basis(1, tile_none())));
-        //let texture = palette(Space::HSV, 0.0, 1.0, 0.0, 1.0, noise(1, 32.0, tile_none()));
+        //let texture = palette(Space::HSV, 0.0, 0.2, 0.0, 1.0, noise(1, 32.0, tile_none()));
+        //let texture = palette(Space::HSV, 0.192, 0.418, 0.015, 0.403, fractal(4.660271, 4, 0.76092863, 2.532766, 0.11465196, 0.0, voronoi_basis(3581209750, tile_all(), 12, 0, 6)));
+        //let texture = palette(Space::HSL, 0.739, 0.448, 0.281, 0.665, displace(0.18501252, voronoi(278220278, 17.42609, tile_all(), 0, 7, 10), voronoi(3737477767, 4.2395425, tile_all(), 2, 1, 0)));
+        //let texture = palette(Space::HSL, 0.406, 0.814, 0.483, 0.329, fractal(3.4102457, 7, 0.4548667, 2.789417, 0.0, 0.0, vnoise_basis(2316030952, tile_all())));
+        //let texture = palette(Space::HSV, 0.111, 0.712, 0.368, 0.051, displace(0.10156162, rotate(9.893959, noise(4137245708, 8.33033, tile_all()), voronoi(1284792858, 4.5874896, tile_all(), 7, 3, 3)), fractal(5.103115, 4, 0.47705963, 2.7184772, 0.0, 1.3609127, voronoi_basis(749463054, tile_all(), 5, 10, 2))));
+        //let texture = palette(Space::HSL, 0.296, 0.515, 0.212, 0.331, saturate(5.5411787, rotate(5.0376725, voronoi(1660873412, 25.0088, tile_all(), 11, 0, 11), noise(2384626526, 4.481734, tile_all()))));
 
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
             let x = (i % WIDTH as usize) as i16;

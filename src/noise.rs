@@ -44,7 +44,7 @@ impl<H: Hasher> Texture for VNoise<H> {
                     // Pick number of cells as a rough approximation to a Poisson distribution.
                     let n = match hash & 7 {
                         0 | 1 | 2 | 3 => 1,
-                        5 | 6 => 2,
+                        4 | 5 | 6 => 2,
                         _ => 3,
                     };
                     // Offset points from cell corner to queried point.
@@ -124,7 +124,7 @@ impl<H: Hasher> Texture for Noise<H> {
                     // Pick number of cells as a rough approximation to a Poisson distribution.
                     let n = match hash & 7 {
                         0 | 1 | 2 | 3 => 1,
-                        5 | 6 => 2,
+                        4 | 5 | 6 => 2,
                         _ => 3,
                     };
                     // Offset points from cell corner to queried point.
