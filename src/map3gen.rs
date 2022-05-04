@@ -58,7 +58,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                     pattern_y as usize,
                     pattern_z as usize,
                 )
-            },
+            }
             _ => {
                 let pattern_x = dna.get_u32_in(0, 25);
                 let pattern_y = dna.get_u32_in(0, 25);

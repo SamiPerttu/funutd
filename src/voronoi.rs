@@ -58,7 +58,9 @@ impl VoronoiState {
         }
     }
 
-    pub fn color(&self) -> Vec3a { self.color / self.color_weight }
+    pub fn color(&self) -> Vec3a {
+        self.color / self.color_weight
+    }
 
     pub fn distance_1(&self) -> f32 {
         self.distance1
