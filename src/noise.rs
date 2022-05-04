@@ -150,7 +150,7 @@ impl<H: Hasher> Texture for Noise<H> {
                 }
             }
         }
-        result * 2.0
+        result * 3.0
     }
 
     fn get_code(&self) -> String {
