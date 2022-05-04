@@ -17,6 +17,13 @@ This is an alpha version undergoing rapid development and may contain rough edge
 The type returned by texture generators is `Box<dyn Texture>`.
 `Texture` is the trait implemented by procedural textures.
 
+The canonical range of texture values is -1...1 in each component.
+This applies to the palette component as well.
+
+Some components may slightly exceed the range, while others may come under.
+Many unary nodes such as `reflect`, `vreflect` and `saturate` remap
+any range back to -1...1.
+
 Data for procedural generation is contained in `Dna` objects.
 Generator functions draw whatever data they need from the supplied `Dna` object.
 `Dna` objects can be constructed full of random data from a seed value.
@@ -24,6 +31,25 @@ Generator functions draw whatever data they need from the supplied `Dna` object.
 Textures can describe themself, that is, print the code that generates them.
 This is done using the `get_code` method. Obtained codes can be copied and
 pasted around and subjected to further scrutiny.
+
+### Tiling Modes
+
+Tiling modes - whether the texture loops seamlessly for each dimension -
+are implemented via a hasher parameter.
+
+Currently implemented tiling modes are:
+
+- `tile_none()` - none of the axes tile.
+- `tile_all()` - space is filled with copies of the unit cube and texture
+frequencies are rounded to the nearest whole number.
+- `tile_xy()` - for each fixed `z`, the `xy` plane is filled with copies
+of the unit square, while moving in the `z` dimension produces infinite variation.
+
+To tile a different shape than the unit cube or square:
+
+- `tile_all_in(x, y, z)` - space is filled with copies of `(x, y, z)` sized boxes.
+Texture frequencies are still rounded to the nearest whole number.
+- `tile_xy_in(x, y)` - space is filled with copies of `(x, y)` sized rectangles.
 
 ## Future
 
