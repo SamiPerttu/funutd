@@ -4,6 +4,26 @@ use super::map3base::*;
 use super::math::*;
 use super::*;
 
+/// Zero texture.
+pub struct Zero {}
+
+impl Texture for Zero {
+    fn at(&self, _point: Vec3a, _frequency: Option<f32>) -> Vec3a {
+        Vec3a::zero()
+    }
+    fn get_code(&self) -> String {
+        "zero()".to_string()
+    }
+    fn get_basis_code(&self) -> String {
+        "zero()".to_string()
+    }
+}
+
+/// Zero texture.
+pub fn zero() -> Zero {
+    Zero {}
+}
+
 /// Saturates components.
 pub struct Saturate {
     /// Amount (amount > 0) equals derivative at origin.
@@ -126,9 +146,7 @@ impl Texture for Posterize {
     }
 }
 
-/// Applies a wavy function to texture values with an offset, which can
-/// spread and reflect components. Amount is the scale (amount > 0),
-/// roughly corresponding to number of reflections.
+/// Posterize: applies a smooth step function in proportion to texture value magnitude.
 pub fn posterize(levels: f32, sharpness: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     Box::new(Posterize {
         levels,
@@ -175,7 +193,7 @@ pub fn overdrive(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     Box::new(Overdrive { amount, texture })
 }
 
-/// Saturates components while retaining component proportions.
+/// Applies a wavy function in proportion to vector magnitude.
 pub struct VReflect {
     /// Amount (amount > 0) equals derivative at origin.
     amount: f32,
@@ -204,8 +222,7 @@ impl Texture for VReflect {
     }
 }
 
-/// Saturates components (amount > 0).
-/// Amount equals derivative at origin. Amounts greater than 1 result in overdrive.
+/// Applies a wavy function in proportion to vector magnitude.
 pub fn vreflect(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
     assert!(amount > 0.0);
     Box::new(VReflect { amount, texture })

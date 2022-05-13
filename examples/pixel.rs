@@ -5,23 +5,22 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-const WIDTH: u32 = 640;
-const HEIGHT: u32 = 640;
-
 use funutd::math::*;
 use funutd::prelude::*;
 
 /// Application state.
 struct World {
-    z: f32,
-    phase: f32,
+    pub z: f32,
+    pub phase: f32,
+    pub width: usize,
+    pub height: usize,
 }
 
 fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
+        let size = LogicalSize::new(512.0, 512.0);
         WindowBuilder::new()
             .with_title("Texture Example")
             .with_inner_size(size)
@@ -30,12 +29,13 @@ fn main() -> Result<(), Error> {
             .unwrap()
     };
 
+    let window_size = window.inner_size();
     let mut pixels = {
-        let window_size = window.inner_size();
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
-        Pixels::new(WIDTH, HEIGHT, surface_texture)?
+        Pixels::new(window_size.width, window_size.height, surface_texture)?
     };
-    let mut world = World::new();
+
+    let mut world = World::new(window_size.width as usize, window_size.height as usize);
 
     event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
@@ -69,8 +69,13 @@ fn main() -> Result<(), Error> {
 
 impl World {
     /// Create a new `World` instance.
-    fn new() -> Self {
-        Self { z: 0.0, phase: 0.0 }
+    fn new(width: usize, height: usize) -> Self {
+        Self {
+            z: 0.0,
+            phase: 0.0,
+            width,
+            height,
+        }
     }
 
     /// Update the `World` internal state.
@@ -100,10 +105,10 @@ impl World {
         //let texture = palette(Space::HSL, 0.296, 0.515, 0.212, 0.331, saturate(5.5411787, rotate(5.0376725, voronoi(1660873412, 25.0088, tile_all(), 11, 0, 11), noise(2384626526, 4.481734, tile_all()))));
 
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
-            let x = (i % WIDTH as usize) as i16;
-            let y = (i / WIDTH as usize) as i16;
-            let fx: f32 = x as f32 / WIDTH as f32;
-            let fy: f32 = y as f32 / HEIGHT as f32;
+            let x = (i % self.width) as i16;
+            let y = (i / self.width) as i16;
+            let fx: f32 = x as f32 / self.width as f32;
+            let fy: f32 = y as f32 / self.height as f32;
 
             let value = texture.at(vec3a(fx, fy, self.z), None);
 

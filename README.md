@@ -44,12 +44,15 @@ Currently implemented tiling modes are:
 frequencies are rounded to the nearest whole number.
 - `tile_xy()` - for each fixed `z`, the `xy` plane is filled with copies
 of the unit square, while moving in the `z` dimension produces infinite variation.
+Texture frequencies are rounded to the nearest whole number.
 
 To tile a different shape than the unit cube or square:
 
 - `tile_all_in(x, y, z)` - space is filled with copies of `(x, y, z)` sized boxes.
-Texture frequencies are still rounded to the nearest whole number.
-- `tile_xy_in(x, y)` - space is filled with copies of `(x, y)` sized rectangles.
+Texture frequencies are rounded to the nearest whole number.
+- `tile_xy_in(x, y)` - for each fixed `z`, the `xy` plane is filled with copies
+of `(x, y)` sized rectangles, while moving in the `z` dimension produces infinite
+variation. Texture frequencies are rounded to the nearest whole number.
 
 ## Future
 

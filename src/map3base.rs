@@ -27,7 +27,7 @@ pub struct Basis {
 }
 
 /// Hashers supply data for grid cells and determine the topology of the procedural texture.
-pub trait Hasher: Clone {
+pub trait Hasher: Clone + Sync + Send {
     /// Builds a grid around a point. The seed is texture specific.
     fn query(&self, seed: u64, frequency: f32, point: Vec3a) -> Basis;
 
@@ -246,7 +246,7 @@ impl Hasher for TileXY {
 }
 
 /// Textures are self-maps in 3-space.
-pub trait Texture {
+pub trait Texture: Sync + Send {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a;
     fn get_code(&self) -> String;
     fn get_basis_code(&self) -> String;

@@ -50,6 +50,22 @@ impl Dna {
         }
     }
 
+    pub fn mutate(dna: &Dna, seed: u64, mutation_p: f32) -> Dna {
+        let mut data = dna.data.clone();
+        let mut rnd = Rnd::from_u64(seed);
+        data[rnd.next_u32_in(0, dna.data.len() as u32 - 1) as usize] = rnd.next_u32();
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..data.len() {
+            if rnd.next_f32() < mutation_p {
+                data[i] = rnd.next_u32();
+            }
+        }
+        Dna {
+            address: vec![0],
+            data,
+        }
+    }
+
     /// Calculates the current parameter hash based on the current local address.
     fn get_hash(&self) -> u64 {
         let l = self.address.len();
