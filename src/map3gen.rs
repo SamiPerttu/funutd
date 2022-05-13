@@ -121,7 +121,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                 softmix3(amount, child_a, child_b)
             }
             2 => {
-                let width = lerp(1.0, 3.0, dna.get_f32());
+                let width = lerp(1.0, 4.0, dna.get_f32());
                 layer(width, child_a, child_b)
             }
             _ => {
@@ -143,7 +143,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
             0.0
         };
         let layer = if dna.get_f32() < 0.333 {
-            lerp(1.0, 3.0, dna.get_f32())
+            lerp(1.0, 4.0, dna.get_f32())
         } else {
             0.0
         };

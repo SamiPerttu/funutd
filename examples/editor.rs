@@ -202,7 +202,10 @@ fn main() {
         }
     });
 
-    let options = eframe::NativeOptions::default();
+    let options = eframe::NativeOptions {
+        initial_window_size: Some((1090.0, 640.0).into()),
+        ..Default::default()
+    };
 
     eframe::run_native(
         "Texture Evolver",
@@ -233,7 +236,7 @@ impl EditorApp {
             rx_image,
         };
         for i in 0..SLOTS {
-            let dna = Dna::new(1024, i as u64);
+            let dna = Dna::new(1024, app.rnd.next_u64());
             let mut slot = ImageSlot {
                 image: None,
                 dna,
