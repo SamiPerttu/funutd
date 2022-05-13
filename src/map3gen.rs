@@ -29,9 +29,9 @@ pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
 }
 
 pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
-    let basis_weight = if complexity <= 10.0 { 1.5 } else { 0.0 };
-    let unary_weight = if complexity >= 5.0 { 1.0 } else { 0.0 };
-    let binary_weight = if complexity >= 8.0 { 1.0 } else { 0.0 };
+    let basis_weight = if complexity <= 10.0 { 1.5 } else { 0.01 };
+    let unary_weight = if complexity >= 5.0 { 1.0 } else { 0.01 };
+    let binary_weight = if complexity >= 8.0 { 1.0 } else { 0.01 };
     let fractal_weight: f32 = if complexity >= 9.0 { 0.8 } else { 0.0 };
 
     let choice = dna.get_f32_in(

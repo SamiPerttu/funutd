@@ -141,4 +141,9 @@ impl Dna {
         *self.address.last_mut().unwrap() += 1;
         x
     }
+
+    /// Resets the Dna for subsequent generation.
+    pub fn reset(&mut self) {
+        self.address = vec![0];
+    }
 }
