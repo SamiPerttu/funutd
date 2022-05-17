@@ -2,6 +2,7 @@
 #[allow(clippy::excessive_precision)]
 pub mod color;
 pub mod dna;
+pub mod ease;
 #[allow(non_snake_case)]
 pub mod hash;
 pub mod lcg;

@@ -1,5 +1,6 @@
 //! Isotropic value and gradient noises.
 
+use super::ease::*;
 use super::hash::*;
 use super::map3base::*;
 use super::math::*;
@@ -10,20 +11,28 @@ pub struct VNoise<H: Hasher> {
     seed: u64,
     frequency: f32,
     hasher: H,
+    ease: Ease,
 }
 
-pub fn vnoise<H: 'static + Hasher>(seed: u64, frequency: f32, hasher: H) -> Box<dyn Texture> {
+pub fn vnoise<H: 'static + Hasher>(
+    seed: u64,
+    frequency: f32,
+    ease: Ease,
+    hasher: H,
+) -> Box<dyn Texture> {
     Box::new(VNoise {
         seed,
         frequency,
+        ease,
         hasher,
     })
 }
 
-pub fn vnoise_basis<H: 'static + Hasher>(seed: u64, hasher: H) -> Box<dyn Texture> {
+pub fn vnoise_basis<H: 'static + Hasher>(seed: u64, ease: Ease, hasher: H) -> Box<dyn Texture> {
     Box::new(VNoise {
         seed,
         frequency: 1.0,
+        ease,
         hasher,
     })
 }
@@ -58,7 +67,7 @@ impl<H: Hasher> Texture for VNoise<H> {
                         if distance2 < radius * radius {
                             let distance = sqrt(distance2) / radius;
                             let color = hash_11(hash);
-                            let blend = 1.0 - smooth5(distance);
+                            let blend = 1.0 - self.ease.at(distance);
                             result += color * blend;
                         }
                         if i + 1 < n {
@@ -73,15 +82,21 @@ impl<H: Hasher> Texture for VNoise<H> {
 
     fn get_code(&self) -> String {
         format!(
-            "vnoise({}, {}, {})",
+            "vnoise({}, {}, {}, {})",
             self.seed,
             self.frequency,
+            self.ease.get_code(),
             self.hasher.get_code()
         )
     }
 
     fn get_basis_code(&self) -> String {
-        format!("vnoise_basis({}, {})", self.seed, self.hasher.get_code())
+        format!(
+            "vnoise_basis({}, {}, {})",
+            self.seed,
+            self.ease.get_code(),
+            self.hasher.get_code()
+        )
     }
 }
 

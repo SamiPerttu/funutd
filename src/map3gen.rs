@@ -2,6 +2,7 @@
 
 use super::color::*;
 use super::dna::*;
+use super::ease::*;
 use super::map3::*;
 use super::map3base::*;
 use super::math::*;
@@ -45,7 +46,21 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         let frequency = xerp(4.0, 32.0, dna.get_f32());
         let texture: Box<dyn Texture> = match dna.get_u32_in(0, 5) {
             0 | 1 => noise(seed, frequency, tile_all()),
-            2 => vnoise(seed, frequency, tile_all()),
+            2 => {
+                let ease = match dna.get_u32_in(0, 9) {
+                    0 => Ease::Id,
+                    1 => Ease::Smooth3,
+                    2 => Ease::Smooth5,
+                    3 => Ease::Smooth7,
+                    4 => Ease::Smooth9,
+                    5 => Ease::Sqrt,
+                    6 => Ease::Squared,
+                    7 => Ease::Cubed,
+                    8 => Ease::UpArc,
+                    _ => Ease::DownArc,
+                };
+                vnoise(seed, frequency, ease, tile_all())
+            }
             3 | 4 => {
                 let pattern_x = dna.get_u32_in(0, 25);
                 let pattern_y = dna.get_u32_in(0, 25);
