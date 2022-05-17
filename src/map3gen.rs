@@ -64,9 +64,22 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                 let pattern_x = dna.get_u32_in(0, 25);
                 let pattern_y = dna.get_u32_in(0, 25);
                 let pattern_z = dna.get_u32_in(0, 25);
+                let ease = match dna.get_u32_in(0, 9) {
+                    0 => Ease::Id,
+                    1 => Ease::Smooth3,
+                    2 => Ease::Smooth5,
+                    3 => Ease::Smooth7,
+                    4 => Ease::Smooth9,
+                    5 => Ease::Sqrt,
+                    6 => Ease::Squared,
+                    7 => Ease::Cubed,
+                    8 => Ease::UpArc,
+                    _ => Ease::DownArc,
+                };
                 voronoi(
                     seed,
                     frequency,
+                    ease,
                     tile_all(),
                     pattern_x as usize,
                     pattern_y as usize,
@@ -77,9 +90,22 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                 let pattern_x = dna.get_u32_in(0, 25);
                 let pattern_y = dna.get_u32_in(0, 25);
                 let pattern_z = dna.get_u32_in(0, 25);
+                let ease = match dna.get_u32_in(0, 9) {
+                    0 => Ease::Id,
+                    1 => Ease::Smooth3,
+                    2 => Ease::Smooth5,
+                    3 => Ease::Smooth7,
+                    4 => Ease::Smooth9,
+                    5 => Ease::Sqrt,
+                    6 => Ease::Squared,
+                    7 => Ease::Cubed,
+                    8 => Ease::UpArc,
+                    _ => Ease::DownArc,
+                };
                 camo(
                     seed,
                     frequency,
+                    ease,
                     tile_all(),
                     pattern_x as usize,
                     pattern_y as usize,

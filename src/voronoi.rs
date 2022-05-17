@@ -3,25 +3,26 @@
 use super::hash::*;
 use super::map3base::*;
 use super::math::*;
+use super::ease::*;
 use super::*;
 
 pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
     debug_assert!(i < 26);
     let p = match i % 13 {
         // All of the dot products below are non-negative.
-        0 => v.dot(vec3a(1.0, 0.0, 0.0)) * 2.0 - 1.0,
-        1 => v.dot(vec3a(-1.0, 1.0, 0.0)) * 2.0 - 1.0,
-        2 => v.dot(vec3a(0.0, 1.0, 0.0)) * 2.0 - 1.0,
-        3 => v.dot(vec3a(0.5, 0.5, 0.0)) * 2.0 - 1.0,
-        4 => v.dot(vec3a(0.0, 0.0, 1.0)) * 1.5 - 1.0,
-        5 => v.dot(vec3a(-1.0, 1.0, 1.0)) * 1.5 - 1.0,
-        6 => v.dot(vec3a(1.0, -1.0, 1.0)) * 2.0 - 1.0,
-        7 => v.dot(vec3a(0.0, -1.0, 1.0)) * 2.0 - 1.0,
-        8 => v.dot(vec3a(-1.0, 0.0, 1.0)) * 2.0 - 1.0,
-        9 => v.dot(vec3a(-0.5, -0.5, 1.0)) * 2.0 - 1.0,
-        10 => v.dot(vec3a(0.5, 0.5, 0.5)) * 1.5 - 1.0,
-        11 => v.dot(vec3a(0.5, 0.0, 0.5)) * 2.0 - 1.0,
-        _ => v.dot(vec3a(0.0, 0.5, 0.5)) * 1.5 - 1.0,
+        0 => clamp01(v.dot(vec3a(1.0, 0.0, 0.0))) * 2.0 - 1.0,
+        1 => clamp01(v.dot(vec3a(-1.0, 1.0, 0.0))) * 2.0 - 1.0,
+        2 => clamp01(v.dot(vec3a(0.0, 1.0, 0.0))) * 2.0 - 1.0,
+        3 => clamp01(v.dot(vec3a(0.5, 0.5, 0.0))) * 2.0 - 1.0,
+        4 => clamp01(v.dot(vec3a(0.0, 0.0, 1.0))) * 2.0 - 1.0,
+        5 => clamp01(v.dot(vec3a(-0.5, 0.5, 0.5))) * 2.0 - 1.0,
+        6 => clamp01(v.dot(vec3a(1.0, -1.0, 1.0))) * 2.0 - 1.0,
+        7 => clamp01(v.dot(vec3a(0.0, -1.0, 1.0))) * 2.0 - 1.0,
+        8 => clamp01(v.dot(vec3a(-1.0, 0.0, 1.0))) * 2.0 - 1.0,
+        9 => clamp01(v.dot(vec3a(-0.5, -0.5, 1.0))) * 2.0 - 1.0,
+        10 => clamp01(v.dot(vec3a(0.333, 0.333, 0.333))) * 2.0 - 1.0,
+        11 => clamp01(v.dot(vec3a(0.5, 0.0, 0.5))) * 2.0 - 1.0,
+        _ => clamp01(v.dot(vec3a(0.0, 0.5, 0.5))) * 2.0 - 1.0,
     };
     if i < 13 {
         p
@@ -193,6 +194,7 @@ impl VoronoiState {
 pub struct Voronoi<H: Hasher> {
     seed: u64,
     frequency: f32,
+    ease: Ease,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -207,17 +209,18 @@ impl<H: Hasher> Texture for Voronoi<H> {
         while state.expand_next(&self.hasher) {}
         let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
         vec3a(
-            voronoi_pattern(self.pattern_x, d_vec),
-            voronoi_pattern(self.pattern_y, d_vec),
-            voronoi_pattern(self.pattern_z, d_vec),
+            self.ease.at(voronoi_pattern(self.pattern_x, d_vec)) * 2.0 - 1.0,
+            self.ease.at(voronoi_pattern(self.pattern_y, d_vec)) * 2.0 - 1.0,
+            self.ease.at(voronoi_pattern(self.pattern_z, d_vec)) * 2.0 - 1.0,
         )
     }
 
     fn get_code(&self) -> String {
         format!(
-            "voronoi({}, {}, {}, {}, {}, {})",
+            "voronoi({}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.frequency,
+            self.ease.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -227,8 +230,9 @@ impl<H: Hasher> Texture for Voronoi<H> {
 
     fn get_basis_code(&self) -> String {
         format!(
-            "voronoi_basis({}, {}, {}, {}, {})",
+            "voronoi_basis({}, {}, {}, {}, {}, {})",
             self.seed,
+            self.ease.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -240,6 +244,7 @@ impl<H: Hasher> Texture for Voronoi<H> {
 pub fn voronoi<H: 'static + Hasher>(
     seed: u64,
     frequency: f32,
+    ease: Ease,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -248,6 +253,7 @@ pub fn voronoi<H: 'static + Hasher>(
     Box::new(Voronoi {
         seed,
         frequency,
+        ease,
         hasher,
         pattern_x,
         pattern_y,
@@ -257,6 +263,7 @@ pub fn voronoi<H: 'static + Hasher>(
 
 pub fn voronoi_basis<H: 'static + Hasher>(
     seed: u64,
+    ease: Ease,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -265,6 +272,7 @@ pub fn voronoi_basis<H: 'static + Hasher>(
     Box::new(Voronoi {
         seed,
         frequency: 1.0,
+        ease,
         hasher,
         pattern_x,
         pattern_y,
@@ -275,6 +283,7 @@ pub fn voronoi_basis<H: 'static + Hasher>(
 pub struct Camo<H: Hasher> {
     seed: u64,
     frequency: f32,
+    ease: Ease,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -290,17 +299,18 @@ impl<H: Hasher> Texture for Camo<H> {
         let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
         let color = state.color();
         vec3a(
-            voronoi_pattern(self.pattern_x, d_vec) * color.x,
-            voronoi_pattern(self.pattern_y, d_vec) * color.y,
-            voronoi_pattern(self.pattern_z, d_vec) * color.z,
+            (self.ease.at(voronoi_pattern(self.pattern_x, d_vec)) * 2.0 - 1.0) * color.x,
+            (self.ease.at(voronoi_pattern(self.pattern_y, d_vec)) * 2.0 - 1.0) * color.y,
+            (self.ease.at(voronoi_pattern(self.pattern_z, d_vec)) * 2.0 - 1.0) * color.z,
         )
     }
 
     fn get_code(&self) -> String {
         format!(
-            "camo({}, {}, {}, {}, {}, {})",
+            "camo({}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.frequency,
+            self.ease.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -310,8 +320,9 @@ impl<H: Hasher> Texture for Camo<H> {
 
     fn get_basis_code(&self) -> String {
         format!(
-            "camo_basis({}, {}, {}, {}, {})",
+            "camo_basis({}, {}, {}, {}, {}, {})",
             self.seed,
+            self.ease.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -323,6 +334,7 @@ impl<H: Hasher> Texture for Camo<H> {
 pub fn camo<H: 'static + Hasher>(
     seed: u64,
     frequency: f32,
+    ease: Ease,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -331,6 +343,7 @@ pub fn camo<H: 'static + Hasher>(
     Box::new(Camo {
         seed,
         frequency,
+        ease,
         hasher,
         pattern_x,
         pattern_y,
@@ -340,6 +353,7 @@ pub fn camo<H: 'static + Hasher>(
 
 pub fn camo_basis<H: 'static + Hasher>(
     seed: u64,
+    ease: Ease,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -348,6 +362,7 @@ pub fn camo_basis<H: 'static + Hasher>(
     Box::new(Camo {
         seed,
         frequency: 1.0,
+        ease,
         hasher,
         pattern_x,
         pattern_y,
