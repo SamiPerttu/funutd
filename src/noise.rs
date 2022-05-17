@@ -68,7 +68,7 @@ impl<H: Hasher> Texture for VNoise<H> {
                         if distance2 < radius * radius {
                             let distance = sqrt(distance2) / radius;
                             let color = hash_11(hash);
-                            let blend = self.ease.at(clamp01(1.0 - distance));
+                            let blend = self.ease.at(1.0 - distance);
                             result += color * blend;
                         }
                         if i + 1 < n {
