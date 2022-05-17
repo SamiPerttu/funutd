@@ -368,7 +368,7 @@ pub fn smooth7<T: Num>(x: T) -> T {
 #[inline]
 pub fn smooth9<T: Num>(x: T) -> T {
     let x2 = x * x;
-    ((((T::new(70) * x - T::new(315)) * x + T::new(540)) * x - T::new(420)) * x + T::new(125))
+    ((((T::new(70) * x - T::new(315)) * x + T::new(540)) * x - T::new(420)) * x + T::new(126))
         * x2
         * x2
         * x
