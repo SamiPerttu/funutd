@@ -75,6 +75,7 @@ impl VoronoiState {
 
     /// Expands next cell or returns false if we are done.
     pub fn expand_next<H: Hasher>(&mut self, hasher: &H) -> bool {
+        if self.max_cell.z == 3 { return false; }
         let dxpos = self.basis.d.x - self.min_cell.x as f32;
         let dxneg = 1.0 - self.basis.d.x + self.max_cell.x as f32;
         let (positive_x, distance_x) = if dxpos < dxneg {

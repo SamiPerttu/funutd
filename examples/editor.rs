@@ -100,7 +100,7 @@ impl RenderSlot {
             self.row = 0;
             self.level -= 1;
             self.rows.resize(self.level_height(), Row::default());
-            for i in (0..self.rows.len() >> 1).rev() {
+            for i in (1..self.rows.len() >> 1).rev() {
                 self.rows.swap(i, i * 2);
             }
             for i in 0..self.rows.len() {
