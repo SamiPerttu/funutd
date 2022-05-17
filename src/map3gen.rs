@@ -47,16 +47,15 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         let texture: Box<dyn Texture> = match dna.get_u32_in(0, 6) {
             0 | 1 => noise(seed, frequency, tile_all()),
             2 | 3 => {
-                let ease = match dna.get_u32_in(0, 9) {
+                let ease = match dna.get_u32_in(0, 8) {
                     0 => Ease::Id,
                     1 => Ease::Smooth3,
                     2 => Ease::Smooth5,
                     3 => Ease::Smooth7,
                     4 => Ease::Smooth9,
-                    5 => Ease::Sqrt,
-                    6 => Ease::Squared,
-                    7 => Ease::Cubed,
-                    8 => Ease::UpArc,
+                    5 => Ease::Squared,
+                    6 => Ease::Cubed,
+                    7 => Ease::UpArc,
                     _ => Ease::DownArc,
                 };
                 vnoise(seed, frequency, ease, tile_all())

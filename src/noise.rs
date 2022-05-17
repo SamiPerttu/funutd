@@ -52,7 +52,8 @@ impl<H: Hasher> Texture for VNoise<H> {
                     let mut hash = self.hasher.hash_z(&basis, hxy, dz);
                     // Pick number of cells as a rough approximation to a Poisson distribution.
                     let n = match hash & 7 {
-                        0 | 1 | 2 | 3 => 1,
+                        0 => 0,
+                        1 | 2 | 3 => 1,
                         4 | 5 | 6 => 2,
                         _ => 3,
                     };
@@ -67,7 +68,7 @@ impl<H: Hasher> Texture for VNoise<H> {
                         if distance2 < radius * radius {
                             let distance = sqrt(distance2) / radius;
                             let color = hash_11(hash);
-                            let blend = 1.0 - self.ease.at(distance);
+                            let blend = self.ease.at(1.0 - distance);
                             result += color * blend;
                         }
                         if i + 1 < n {
@@ -136,12 +137,11 @@ impl<H: Hasher> Texture for Noise<H> {
                 let mut offset = Vec3a::new(dx as f32, dy as f32, 0.0) - basis.d;
                 for dz in -1..=1 {
                     let mut hash = self.hasher.hash_z(&basis, hxy, dz);
-                    // Pick number of cells as a rough approximation to a Poisson(2) distribution.
+                    // Pick number of cells as a rough approximation to a Poisson distribution.
                     let n = match hash & 7 {
                         0 | 1 | 2 => 1,
                         3 | 4 | 5 => 2,
-                        6 => 3,
-                        _ => 4,
+                        _ => 3,
                     };
                     // Offset points from cell corner to queried point.
                     offset = vec3a(offset.x, offset.y, dz as f32 - basis.d.z);
