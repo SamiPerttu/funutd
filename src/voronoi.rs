@@ -10,19 +10,19 @@ pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
     debug_assert!(i < 26);
     let p = match i % 13 {
         // All of the dot products below are non-negative.
-        0 => clamp01(v.dot(vec3a(1.0, 0.0, 0.0))) * 2.0 - 1.0,
-        1 => clamp01(v.dot(vec3a(-1.0, 1.0, 0.0))) * 2.0 - 1.0,
-        2 => clamp01(v.dot(vec3a(0.0, 1.0, 0.0))) * 2.0 - 1.0,
-        3 => clamp01(v.dot(vec3a(0.5, 0.5, 0.0))) * 2.0 - 1.0,
-        4 => clamp01(v.dot(vec3a(0.0, 0.0, 1.0))) * 2.0 - 1.0,
-        5 => clamp01(v.dot(vec3a(-0.5, 0.5, 0.5))) * 2.0 - 1.0,
-        6 => clamp01(v.dot(vec3a(1.0, -1.0, 1.0))) * 2.0 - 1.0,
-        7 => clamp01(v.dot(vec3a(0.0, -1.0, 1.0))) * 2.0 - 1.0,
-        8 => clamp01(v.dot(vec3a(-1.0, 0.0, 1.0))) * 2.0 - 1.0,
-        9 => clamp01(v.dot(vec3a(-0.5, -0.5, 1.0))) * 2.0 - 1.0,
-        10 => clamp01(v.dot(vec3a(0.333, 0.333, 0.333))) * 2.0 - 1.0,
-        11 => clamp01(v.dot(vec3a(0.5, 0.0, 0.5))) * 2.0 - 1.0,
-        _ => clamp01(v.dot(vec3a(0.0, 0.5, 0.5))) * 2.0 - 1.0,
+        0 => clamp01(v.dot(vec3a(1.0, 0.0, 0.0))),
+        1 => clamp01(v.dot(vec3a(-1.0, 1.0, 0.0))),
+        2 => clamp01(v.dot(vec3a(0.0, 1.0, 0.0))),
+        3 => clamp01(v.dot(vec3a(0.5, 0.5, 0.0))),
+        4 => clamp01(v.dot(vec3a(0.0, 0.0, 1.0))),
+        5 => clamp01(v.dot(vec3a(-0.5, 0.5, 0.5))),
+        6 => clamp01(v.dot(vec3a(1.0, -1.0, 1.0))),
+        7 => clamp01(v.dot(vec3a(0.0, -1.0, 1.0))),
+        8 => clamp01(v.dot(vec3a(-1.0, 0.0, 1.0))),
+        9 => clamp01(v.dot(vec3a(-0.5, -0.5, 1.0))),
+        10 => clamp01(v.dot(vec3a(0.333, 0.333, 0.333))),
+        11 => clamp01(v.dot(vec3a(0.5, 0.0, 0.5))),
+        _ => clamp01(v.dot(vec3a(0.0, 0.5, 0.5))),
     };
     if i < 13 {
         p

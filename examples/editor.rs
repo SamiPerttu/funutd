@@ -180,7 +180,7 @@ fn main() {
                         })
                         .is_err()
                     {
-                        break;
+                        continue;
                     }
                 }
             } else {
