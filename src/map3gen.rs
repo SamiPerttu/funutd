@@ -44,7 +44,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         // Generate 1 octave of something.
         let seed = dna.get_u32() as u64;
         let frequency = xerp(4.0, 32.0, dna.get_f32());
-        let texture: Box<dyn Texture> = match dna.get_u32_in(0, 6) {
+        let texture: Box<dyn Texture> = match dna.get_u32_in(0, 7) {
             0 | 1 => noise(seed, frequency, tile_all()),
             2 | 3 => {
                 let ease = match dna.get_u32_in(0, 8) {
@@ -86,6 +86,32 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                     pattern_z as usize,
                 )
             }
+            6 => {
+                let w0 = dna.get_f32_in(0.0, 0.5);
+                let w1 = dna.get_f32_in(0.0, 0.5);
+                let w2 = dna.get_f32_in(0.0, 0.5);
+                let ease = match dna.get_u32_in(0, 9) {
+                    0 => Ease::Id,
+                    1 => Ease::Smooth3,
+                    2 => Ease::Smooth5,
+                    3 => Ease::Smooth7,
+                    4 => Ease::Smooth9,
+                    5 => Ease::Sqrt,
+                    6 => Ease::Squared,
+                    7 => Ease::Cubed,
+                    8 => Ease::UpArc,
+                    _ => Ease::DownArc,
+                };
+                camo(
+                    seed,
+                    frequency,
+                    ease,
+                    tile_all(),
+                    w0,
+                    w1,
+                    w2,
+                )
+            }
             _ => {
                 let pattern_x = dna.get_u32_in(0, 25);
                 let pattern_y = dna.get_u32_in(0, 25);
@@ -102,7 +128,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
                     8 => Ease::UpArc,
                     _ => Ease::DownArc,
                 };
-                camo(
+                worley(
                     seed,
                     frequency,
                     ease,

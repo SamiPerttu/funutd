@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     2.4051504,
                     0.0,
                     2.0523214,
-                    camo_basis(3902470283, Ease::Id, tile_all(), 7, 10, 17),
+                    worley_basis(3902470283, Ease::Id, tile_all(), 7, 10, 17),
                 ),
             ),
         ),
@@ -108,7 +108,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 displace(
                     0.15992701,
                     voronoi_basis(1401237949, Ease::Id, tile_all(), 10, 25, 7),
-                    camo_basis(785949362, Ease::Id, tile_all(), 0, 22, 14),
+                    worley_basis(785949362, Ease::Id, tile_all(), 0, 22, 14),
                 ),
             ),
         ),

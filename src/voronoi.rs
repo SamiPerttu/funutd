@@ -192,6 +192,7 @@ impl VoronoiState {
     }
 }
 
+/// Voronoi basis. Cell colors are omitted here, unlike in Worley and Camo.
 pub struct Voronoi<H: Hasher> {
     seed: u64,
     frequency: f32,
@@ -281,7 +282,8 @@ pub fn voronoi_basis<H: 'static + Hasher>(
     })
 }
 
-pub struct Camo<H: Hasher> {
+/// Colored Worley basis. Like Voronoi but with cell colors applied.
+pub struct Worley<H: Hasher> {
     seed: u64,
     frequency: f32,
     ease: Ease,
@@ -291,7 +293,7 @@ pub struct Camo<H: Hasher> {
     pattern_z: usize,
 }
 
-impl<H: Hasher> Texture for Camo<H> {
+impl<H: Hasher> Texture for Worley<H> {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
         let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
@@ -308,7 +310,7 @@ impl<H: Hasher> Texture for Camo<H> {
 
     fn get_code(&self) -> String {
         format!(
-            "camo({}, {}, {}, {}, {}, {}, {})",
+            "worley({}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.frequency,
             self.ease.get_code(),
@@ -321,7 +323,7 @@ impl<H: Hasher> Texture for Camo<H> {
 
     fn get_basis_code(&self) -> String {
         format!(
-            "camo_basis({}, {}, {}, {}, {}, {})",
+            "worley({}, {}, {}, {}, {}, {})",
             self.seed,
             self.ease.get_code(),
             self.hasher.get_code(),
@@ -332,7 +334,7 @@ impl<H: Hasher> Texture for Camo<H> {
     }
 }
 
-pub fn camo<H: 'static + Hasher>(
+pub fn worley<H: 'static + Hasher>(
     seed: u64,
     frequency: f32,
     ease: Ease,
@@ -341,7 +343,7 @@ pub fn camo<H: 'static + Hasher>(
     pattern_y: usize,
     pattern_z: usize,
 ) -> Box<dyn Texture> {
-    Box::new(Camo {
+    Box::new(Worley {
         seed,
         frequency,
         ease,
@@ -352,7 +354,7 @@ pub fn camo<H: 'static + Hasher>(
     })
 }
 
-pub fn camo_basis<H: 'static + Hasher>(
+pub fn worley_basis<H: 'static + Hasher>(
     seed: u64,
     ease: Ease,
     hasher: H,
@@ -360,7 +362,7 @@ pub fn camo_basis<H: 'static + Hasher>(
     pattern_y: usize,
     pattern_z: usize,
 ) -> Box<dyn Texture> {
-    Box::new(Camo {
+    Box::new(Worley {
         seed,
         frequency: 1.0,
         ease,
@@ -368,5 +370,98 @@ pub fn camo_basis<H: 'static + Hasher>(
         pattern_x,
         pattern_y,
         pattern_z,
+    })
+}
+
+/// Camo basis. A colored Worley basis.
+pub struct Camo<H: Hasher> {
+    seed: u64,
+    frequency: f32,
+    ease: Ease,
+    hasher: H,
+    w0: f32,
+    w1: f32,
+    w2: f32,
+}
+
+impl<H: Hasher> Texture for Camo<H> {
+    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let frequency = frequency.unwrap_or(self.frequency);
+        let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
+        state.process_cell(&self.hasher, 0, 0, 0);
+        while state.expand_next(&self.hasher) {}
+        let color = state.color();
+        let d1 = self.ease.at(min(1.0, state.distance_1()));
+        let d2 = self.ease.at(min(1.0, state.distance_2()));
+        let d = self.w0 + self.w1 * d1 + self.w2 * d2;
+        vec3a(
+            d * color.x,
+            d * color.y,
+            d * color.z
+        )
+    }
+
+    fn get_code(&self) -> String {
+        format!(
+            "camo({}, {}, {}, {}, {:?}, {:?}, {:?})",
+            self.seed,
+            self.frequency,
+            self.ease.get_code(),
+            self.hasher.get_code(),
+            self.w0,
+            self.w1,
+            self.w2
+        )
+    }
+
+    fn get_basis_code(&self) -> String {
+        format!(
+            "camo_basis({}, {}, {}, {:?}, {:?}, {:?})",
+            self.seed,
+            self.ease.get_code(),
+            self.hasher.get_code(),
+            self.w0,
+            self.w1,
+            self.w2
+        )
+    }
+}
+
+pub fn camo<H: 'static + Hasher>(
+    seed: u64,
+    frequency: f32,
+    ease: Ease,
+    hasher: H,
+    w0: f32,
+    w1: f32,
+    w2: f32,
+) -> Box<dyn Texture> {
+    Box::new(Camo {
+        seed,
+        frequency,
+        ease,
+        hasher,
+        w0,
+        w1,
+        w2
+    })
+}
+
+pub fn camo_basis<H: 'static + Hasher>(
+    seed: u64,
+    ease: Ease,
+    hasher: H,
+    w0 : f32,
+    w1 : f32,
+    w2 : f32,
+) -> Box<dyn Texture> {
+    Box::new(Camo {
+        seed,
+        frequency: 1.0,
+        ease,
+        hasher,
+        w0,
+        w1,
+        w2,
     })
 }
