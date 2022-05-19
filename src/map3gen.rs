@@ -83,16 +83,22 @@ pub fn genmap3palette(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
         },
     );
     let saturation = dna.get_f32_in("saturation", 0.0, 1.0);
-    let map = genmap3(complexity, dna);
+    let map = genmap3(complexity, false, dna);
     palette(space, hue_min, hue_amount, value_min, saturation, map)
 }
 
 /// Generate a texture.
-pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
+pub fn genmap3(complexity: f32, is_fractal: bool, dna: &mut Dna) -> Box<dyn Texture> {
     let basis_weight = if complexity <= 10.0 { 1.5 } else { 0.01 };
     let unary_weight = if complexity >= 5.0 { 1.0 } else { 0.01 };
     let binary_weight = if complexity >= 8.0 { 1.0 } else { 0.01 };
-    let fractal_weight: f32 = if complexity >= 9.0 { 0.8 } else { 0.0 };
+    let fractal_weight: f32 = if complexity >= 9.0 {
+        0.8
+    } else if is_fractal {
+        0.0
+    } else {
+        0.01
+    };
 
     let choice = dna.get_choice(
         "node type",
@@ -107,7 +113,11 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     if choice == 0 {
         // Generate 1 octave of something.
         let seed = dna.get_u32("seed") as u64;
-        let frequency = dna.get_f32_xform("frequency", |x| xerp(4.0, 32.0, x));
+        let frequency = if is_fractal {
+            2.0
+        } else {
+            dna.get_f32_xform("frequency", |x| xerp(4.0, 32.0, x))
+        };
         let texture: Box<dyn Texture> = match dna.get_choice(
             "basis",
             [
@@ -165,7 +175,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     } else if choice == 1 {
         // Shape a map with a unary operator.
         let child_complexity = complexity * 0.5 - 1.0;
-        let child = dna.call(|dna| genmap3(child_complexity, dna));
+        let child = dna.call(|dna| genmap3(child_complexity, is_fractal, dna));
         let unary_node = match dna.get_choice(
             "unary node",
             [
@@ -205,8 +215,8 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     } else if choice == 2 {
         // Combine two maps with a binary operator.
         let child_complexity = complexity * 0.5 - 1.0;
-        let child_a = dna.call(|dna| genmap3(child_complexity, dna));
-        let child_b = dna.call(|dna| genmap3(child_complexity, dna));
+        let child_a = dna.call(|dna| genmap3(child_complexity, is_fractal, dna));
+        let child_b = dna.call(|dna| genmap3(child_complexity, is_fractal, dna));
         let binary_node = match dna.get_choice(
             "binary node",
             [
@@ -237,7 +247,7 @@ pub fn genmap3(complexity: f32, dna: &mut Dna) -> Box<dyn Texture> {
     } else {
         // Fractalize map by sampling many octaves.
         let child_complexity = min(8.0, complexity * 0.5 - 1.0);
-        let child_basis = dna.call(|dna| genmap3(child_complexity, dna));
+        let child_basis = dna.call(|dna| genmap3(child_complexity, true, dna));
         let base_f = dna.get_f32_in("base frequency", 1.5, 9.0);
         let roughness = dna.get_f32_xform("roughness", |x| xerp(0.4, 0.9, x));
         let octaves = dna.get_u32_in("octaves", 2, 10) as usize;
