@@ -60,6 +60,23 @@ variation. Texture frequencies are rounded to the nearest whole number.
 `Dna` objects can be mutated or crossed over to create variations of genotypes
 or to optimize a texture for a purpose.
 
+## Texture Explorer
+
+The texture explorer, which is a work in progress,
+can be found under the example `editor`.
+
+It supports an explorative workflow: click on one of the small images,
+and the other images become its mutations.
+
+The code of the currently selected texture is shown below the large image.
+You can copy the code to clipboard by clicking "Copy Code".
+
+Codes can be pasted in source code directly. It is just required to
+import the prelude to the paste site (`use funutd::prelude::*;`).
+
+The tree shaped parameters are shown on the right side of the screen,
+where they can be edited as well.
+
 ## Examples
 
 ```rust
@@ -141,5 +158,5 @@ Licensed under either of <a href="LICENSE-APACHE">Apache License, Version 2.0</a
 or <a href="LICENSE-MIT">MIT license</a> at your option.
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in FunDSP by you, as defined in the Apache-2.0 license,
+for inclusion in FunUTD by you, as defined in the Apache-2.0 license,
 shall be dual licensed as above, without any additional terms or conditions.

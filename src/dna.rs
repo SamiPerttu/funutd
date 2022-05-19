@@ -127,10 +127,12 @@ impl Dna {
         self.genome.insert(hash, value);
     }
 
+    /// Parameters are recorded in interactive mode.
     pub fn is_interactive(&self) -> bool {
         self.interactive
     }
 
+    /// Set interactive mode. Parameters are recorded when on (the default).
     pub fn set_interactive(&mut self, interactive: bool) {
         self.interactive = interactive;
     }
@@ -338,7 +340,7 @@ impl Dna {
             self.add_parameter(
                 ParameterKind::Categorical,
                 name.into(),
-                format!("{:?}", choices[choice_index].1),
+                choices[choice_index].1.to_string(),
                 self.address.clone(),
                 choices.len() as u32,
                 choice_index as u32,

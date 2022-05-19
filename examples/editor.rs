@@ -25,11 +25,14 @@ impl Row {
     }
 }
 
-const SLOTS: usize = 4;
+const SLOTS: usize = 5;
+const VISIBLE_SLOTS: usize = 4;
+const EXPORT_SLOT: usize = 4;
 
 struct ImageMessage {
     pub slot: usize,
-    pub image: egui::ColorImage,
+    pub rows: usize,
+    pub image: Option<egui::ColorImage>,
 }
 
 struct RenderMessage {
@@ -176,12 +179,22 @@ fn main() {
                     if tx_image
                         .send(ImageMessage {
                             slot: slot_index,
-                            image,
+                            rows: image.height(),
+                            image: Some(image),
                         })
                         .is_err()
                     {
                         continue;
                     }
+                } else if tx_image
+                    .send(ImageMessage {
+                        slot: slot_index,
+                        rows: slot[slot_index].row,
+                        image: None,
+                    })
+                    .is_err()
+                {
+                    continue;
                 }
             } else {
                 no_progress += 1;
@@ -208,7 +221,7 @@ fn main() {
     };
 
     eframe::run_native(
-        "Texture Editor",
+        "Texture Explorer",
         options,
         Box::new(move |_cc| Box::new(app)),
     );
@@ -218,6 +231,11 @@ struct EditorApp {
     rnd: Rnd,
     can_exit: bool,
     is_exiting: bool,
+    is_exporting: bool,
+    export_size: u32,
+    export_path: std::path::PathBuf,
+    export_in_progress: bool,
+    export_rows: usize,
     slot: Vec<ImageSlot>,
     focus_slot: usize,
     tx_render: mpsc::Sender<RenderMessage>,
@@ -230,6 +248,11 @@ impl EditorApp {
             rnd: Rnd::from_time(),
             can_exit: false,
             is_exiting: false,
+            is_exporting: false,
+            export_size: 4096,
+            export_path: std::path::PathBuf::new(),
+            export_in_progress: false,
+            export_rows: 0,
             slot: Vec::new(),
             focus_slot: 0,
             tx_render,
@@ -242,22 +265,24 @@ impl EditorApp {
                 dna,
                 texture: Box::new(zero()),
             };
-            slot.texture = slot.get_texture();
-            if app
-                .tx_render
-                .send(RenderMessage {
-                    slot: i,
-                    texture: slot.get_texture(),
-                })
-                .is_ok()
-            {}
+            if i < VISIBLE_SLOTS {
+                slot.texture = slot.get_texture();
+                if app
+                    .tx_render
+                    .send(RenderMessage {
+                        slot: i,
+                        texture: slot.get_texture(),
+                    })
+                    .is_ok()
+                {}
+            }
             app.slot.push(slot);
         }
         app
     }
     pub fn mutate(&mut self, source: usize) {
         self.focus_slot = source;
-        for mutate_i in 0..SLOTS {
+        for mutate_i in 0..VISIBLE_SLOTS {
             if mutate_i == source {
                 continue;
             }
@@ -294,7 +319,13 @@ impl eframe::App for EditorApp {
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         while let Ok(message) = self.rx_image.try_recv() {
-            self.slot[message.slot].image = Some(ctx.load_texture("", message.image));
+            if message.slot == EXPORT_SLOT {
+                if self.export_in_progress {
+                    self.export_rows = message.rows;
+                }
+            } else if let Some(image) = message.image {
+                self.slot[message.slot].image = Some(ctx.load_texture("", image));
+            }
         }
 
         let mut id = 0;
@@ -380,7 +411,7 @@ impl eframe::App for EditorApp {
                             ui.label(parameter.name());
                             let mut my_f32 = parameter.raw() as f32;
                             let response = ui.add(
-                                egui::Slider::new(&mut my_f32, 0.0..=parameter.range_f32())
+                                egui::Slider::new(&mut my_f32, 0.0..=parameter.range_f32() - 1.0)
                                     .show_value(false)
                                     .text(parameter.value()),
                             );
@@ -409,6 +440,9 @@ impl eframe::App for EditorApp {
                     let mut clipboard = arboard::Clipboard::new().unwrap();
                     clipboard.set_text(code.clone()).unwrap();
                 }
+                if ui.button("Export").clicked() {
+                    self.is_exporting = !self.is_exporting;
+                }
             });
             ui.code(code);
         });
@@ -427,6 +461,41 @@ impl eframe::App for EditorApp {
                             self.can_exit = true;
                             frame.quit();
                         }
+                    });
+                });
+        }
+
+        if self.is_exporting {
+            egui::Window::new("Export Texture Image")
+                .collapsible(false)
+                .resizable(false)
+                .show(ctx, |ui| {
+                    let mut export_size = self.export_size as f32;
+                    let response = ui.add(
+                        egui::Slider::new(&mut export_size, 512.0..=8192.0)
+                            .show_value(true)
+                            .text("Size"),
+                    );
+                    if response.changed() {
+                        self.export_size = export_size as u32;
+                    }
+                    ui.horizontal(|ui| {
+                        let mut path_string: String =
+                            self.export_path.to_str().unwrap_or("").into();
+                        let response = ui.add(egui::TextEdit::singleline(&mut path_string));
+                        if response.changed() {
+                            self.export_path = std::path::PathBuf::from(path_string);
+                        }
+                        if ui.add(egui::Button::new("..")).clicked() {
+                            let files = rfd::FileDialog::new()
+                                .add_filter("PNG", &["png"])
+                                .set_directory("/")
+                                .save_file();
+                            if let Some(path) = files {
+                                self.export_path = path;
+                            }
+                        }
+                        ui.add(egui::Label::new("File"));
                     });
                 });
         }
