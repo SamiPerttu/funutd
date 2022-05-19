@@ -1,6 +1,7 @@
 #[allow(non_snake_case)]
 #[allow(clippy::excessive_precision)]
 pub mod color;
+#[allow(clippy::too_many_arguments)]
 pub mod dna;
 pub mod ease;
 #[allow(non_snake_case)]

@@ -88,7 +88,7 @@ impl World {
     ///
     /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
     fn draw(&self, frame: &mut [u8]) {
-        let mut dna = Dna::new(256, self.z as u64);
+        let mut dna = Dna::new(self.z as u64);
         let texture = genmap3palette(20.0, &mut dna);
 
         if self.phase > 0.0 && self.phase < 1.0 / 24.0 {

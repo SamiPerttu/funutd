@@ -1,9 +1,9 @@
 //! Voronoi texture basis.
 
+use super::ease::*;
 use super::hash::*;
 use super::map3base::*;
 use super::math::*;
-use super::ease::*;
 use super::*;
 
 pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
@@ -75,7 +75,6 @@ impl VoronoiState {
 
     /// Expands next cell or returns false if we are done.
     pub fn expand_next<H: Hasher>(&mut self, hasher: &H) -> bool {
-        if self.max_cell.z == 3 { return false; }
         let dxpos = self.basis.d.x - self.min_cell.x as f32;
         let dxneg = 1.0 - self.basis.d.x + self.max_cell.x as f32;
         let (positive_x, distance_x) = if dxpos < dxneg {
@@ -394,11 +393,7 @@ impl<H: Hasher> Texture for Camo<H> {
         let d1 = self.ease.at(min(1.0, state.distance_1()));
         let d2 = self.ease.at(min(1.0, state.distance_2()));
         let d = self.w0 + self.w1 * d1 + self.w2 * d2;
-        vec3a(
-            d * color.x,
-            d * color.y,
-            d * color.z
-        )
+        vec3a(d * color.x, d * color.y, d * color.z)
     }
 
     fn get_code(&self) -> String {
@@ -443,7 +438,7 @@ pub fn camo<H: 'static + Hasher>(
         hasher,
         w0,
         w1,
-        w2
+        w2,
     })
 }
 
@@ -451,9 +446,9 @@ pub fn camo_basis<H: 'static + Hasher>(
     seed: u64,
     ease: Ease,
     hasher: H,
-    w0 : f32,
-    w1 : f32,
-    w2 : f32,
+    w0: f32,
+    w1: f32,
+    w2: f32,
 ) -> Box<dyn Texture> {
     Box::new(Camo {
         seed,

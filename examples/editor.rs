@@ -1,4 +1,4 @@
-//! Texture evolver GUI. WIP.
+//! Texture editor GUI. WIP.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::egui;
@@ -7,7 +7,7 @@ use rayon::prelude::*;
 use std::sync::mpsc;
 use std::thread;
 
-/// Convert texture value to u8.
+/// Convert texture value to u8. Canonical texture range is -1...1.
 pub fn convert_u8(x: f32) -> u8 {
     ((x * 0.5 + 0.5).min(1.0).max(0.0) * 255.99999).floor() as u8
 }
@@ -203,12 +203,12 @@ fn main() {
     });
 
     let options = eframe::NativeOptions {
-        initial_window_size: Some((1090.0, 640.0).into()),
+        initial_window_size: Some((1200.0, 640.0).into()),
         ..Default::default()
     };
 
     eframe::run_native(
-        "Texture Evolver",
+        "Texture Editor",
         options,
         Box::new(move |_cc| Box::new(app)),
     );
@@ -236,7 +236,7 @@ impl EditorApp {
             rx_image,
         };
         for i in 0..SLOTS {
-            let dna = Dna::new(1024, app.rnd.next_u64());
+            let dna = Dna::new(app.rnd.next_u64());
             let mut slot = ImageSlot {
                 image: None,
                 dna,
@@ -273,6 +273,17 @@ impl EditorApp {
             {}
         }
     }
+    pub fn dna_updated(&mut self, slot: usize) {
+        self.slot[slot].texture = self.slot[slot].get_texture();
+        if self
+            .tx_render
+            .send(RenderMessage {
+                slot,
+                texture: self.slot[slot].get_texture(),
+            })
+            .is_ok()
+        {}
+    }
 }
 
 impl eframe::App for EditorApp {
@@ -286,10 +297,12 @@ impl eframe::App for EditorApp {
             self.slot[message.slot].image = Some(ctx.load_texture("", message.image));
         }
 
+        let mut id = 0;
+
         egui::SidePanel::left("mosaic panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if let Some(image) = self.slot[0].image.clone() {
-                    let button = egui::ImageButton::new(&image, (256.0, 256.0));
+                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(0);
@@ -299,7 +312,7 @@ impl eframe::App for EditorApp {
                     }
                 }
                 if let Some(image) = self.slot[1].image.clone() {
-                    let button = egui::ImageButton::new(&image, (256.0, 256.0));
+                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(1);
@@ -311,7 +324,7 @@ impl eframe::App for EditorApp {
             });
             ui.horizontal(|ui| {
                 if let Some(image) = self.slot[2].image.clone() {
-                    let button = egui::ImageButton::new(&image, (256.0, 256.0));
+                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(2);
@@ -321,7 +334,7 @@ impl eframe::App for EditorApp {
                     }
                 }
                 if let Some(image) = self.slot[3].image.clone() {
-                    let button = egui::ImageButton::new(&image, (256.0, 256.0));
+                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(3);
@@ -333,16 +346,66 @@ impl eframe::App for EditorApp {
             });
         });
 
-        egui::SidePanel::right("big panel").show(ctx, |ui| {
+        egui::SidePanel::right("parameter editor").show(ctx, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let dna = self.slot[self.focus_slot].dna.clone();
+                for parameter in dna.parameters() {
+                    ui.horizontal(|ui| {
+                        if !parameter.choices().is_empty() {
+                            ui.push_id(id, |ui| {
+                                id += 1;
+                                egui::ComboBox::from_label(parameter.name())
+                                    .selected_text(parameter.value())
+                                    .show_ui(ui, |ui| {
+                                        let mut selected_text = parameter.value().clone();
+                                        for (index, value) in parameter.choices().iter().enumerate()
+                                        {
+                                            if ui
+                                                .selectable_value(
+                                                    &mut selected_text,
+                                                    value.clone(),
+                                                    value,
+                                                )
+                                                .changed()
+                                            {
+                                                self.slot[self.focus_slot]
+                                                    .dna
+                                                    .set_value(parameter.hash(), index as u32);
+                                                self.dna_updated(self.focus_slot);
+                                            }
+                                        }
+                                    });
+                            });
+                        } else {
+                            ui.label(parameter.name());
+                            let mut my_f32 = parameter.raw() as f32;
+                            let response = ui.add(
+                                egui::Slider::new(&mut my_f32, 0.0..=parameter.range_f32())
+                                    .show_value(false)
+                                    .text(parameter.value()),
+                            );
+                            if response.changed() {
+                                self.slot[self.focus_slot]
+                                    .dna
+                                    .set_value(parameter.hash(), my_f32 as u32);
+                                self.dna_updated(self.focus_slot);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        egui::CentralPanel::default().show(ctx, |ui| {
             if let Some(image) = self.slot[self.focus_slot].image.clone() {
-                let button = egui::ImageButton::new(&image, (512.0, 512.0));
+                let button = egui::ImageButton::new(&image, (480.0, 480.0));
                 if ui.add(button).clicked() {
                     self.mutate(self.focus_slot);
                 }
             }
             let code = self.slot[self.focus_slot].texture.get_code();
             ui.horizontal_wrapped(|ui| {
-                if ui.button("Copy").clicked() {
+                if ui.button("Copy Code").clicked() {
                     let mut clipboard = arboard::Clipboard::new().unwrap();
                     clipboard.set_text(code.clone()).unwrap();
                 }
@@ -367,6 +430,7 @@ impl eframe::App for EditorApp {
                     });
                 });
         }
+
         ctx.request_repaint();
     }
 }
