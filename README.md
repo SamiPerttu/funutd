@@ -77,6 +77,10 @@ import the prelude to the paste site (`use funutd::prelude::*;`).
 The tree shaped parameters are shown on the right side of the screen,
 where they can be edited as well.
 
+![](editor_gui.jpg "explorer GUI")
+
+---
+
 ## Examples
 
 ```rust
