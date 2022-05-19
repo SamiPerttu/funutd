@@ -24,6 +24,7 @@ eframe = "0.18.0"
 rayon = "1.5.2"
 arboard = "2.1.0"
 rfd = "0.8.2"
+png = "0.17.5"
 
 [[example]]
 name = "plot"

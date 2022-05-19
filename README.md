@@ -11,7 +11,7 @@ This is an alpha version undergoing rapid development and may contain rough edge
 * An endless supply of procedurally generated, self-describing volumetric textures
 * Isotropic value noise, isotropic gradient noise and Voronoi bases
 * Palette generation with Okhsv and Okhsl color spaces
-* Interactive editor (in the example `editor`)
+* Interactive texture explorer (in the example `editor`)
 
 ## Basics
 

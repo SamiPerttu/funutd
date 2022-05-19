@@ -6,6 +6,8 @@ use funutd::prelude::*;
 use rayon::prelude::*;
 use std::sync::mpsc;
 use std::thread;
+use std::fs::File;
+use std::io::BufWriter;
 
 /// Convert texture value to u8. Canonical texture range is -1...1.
 pub fn convert_u8(x: f32) -> u8 {
@@ -37,6 +39,9 @@ struct ImageMessage {
 
 struct RenderMessage {
     pub slot: usize,
+    pub width: usize,
+    pub height: usize,
+    pub levels: usize,
     pub texture: Box<dyn Texture>,
 }
 
@@ -87,9 +92,17 @@ impl RenderSlot {
         })
     }
     /// Sets the texture.
-    pub fn set_texture(&mut self, texture: Box<dyn Texture>) {
+    pub fn set_texture(
+        &mut self,
+        texture: Box<dyn Texture>,
+        width: usize,
+        height: usize,
+        levels: usize,
+    ) {
         self.texture = texture;
-        self.level = 4;
+        self.width = width;
+        self.height = height;
+        self.level = levels;
         self.row = 0;
         self.rows = Vec::new();
     }
@@ -204,19 +217,29 @@ fn main() {
             // If we cannot progress in any of the slots, we wait for a message.
             if no_progress >= SLOTS {
                 if let Ok(message) = rx_render.recv() {
-                    slot[message.slot].set_texture(message.texture);
+                    slot[message.slot].set_texture(
+                        message.texture,
+                        message.width,
+                        message.height,
+                        message.levels,
+                    );
                     no_progress = 0;
                 }
             }
             while let Ok(message) = rx_render.try_recv() {
-                slot[message.slot].set_texture(message.texture);
+                slot[message.slot].set_texture(
+                    message.texture,
+                    message.width,
+                    message.height,
+                    message.levels,
+                );
                 no_progress = 0;
             }
         }
     });
 
     let options = eframe::NativeOptions {
-        initial_window_size: Some((1200.0, 640.0).into()),
+        initial_window_size: Some((1280.0, 640.0).into()),
         ..Default::default()
     };
 
@@ -232,7 +255,7 @@ struct EditorApp {
     can_exit: bool,
     is_exiting: bool,
     is_exporting: bool,
-    export_size: u32,
+    export_size: usize,
     export_path: std::path::PathBuf,
     export_in_progress: bool,
     export_rows: usize,
@@ -271,6 +294,9 @@ impl EditorApp {
                     .tx_render
                     .send(RenderMessage {
                         slot: i,
+                        width: 1024,
+                        height: 1024,
+                        levels: 4,
                         texture: slot.get_texture(),
                     })
                     .is_ok()
@@ -292,6 +318,9 @@ impl EditorApp {
                 .tx_render
                 .send(RenderMessage {
                     slot: mutate_i,
+                    width: 1024,
+                    height: 1024,
+                    levels: 4,
                     texture: self.slot[mutate_i].get_texture(),
                 })
                 .is_ok()
@@ -304,6 +333,9 @@ impl EditorApp {
             .tx_render
             .send(RenderMessage {
                 slot,
+                width: 1024,
+                height: 1024,
+                levels: 4,
                 texture: self.slot[slot].get_texture(),
             })
             .is_ok()
@@ -322,6 +354,36 @@ impl eframe::App for EditorApp {
             if message.slot == EXPORT_SLOT {
                 if self.export_in_progress {
                     self.export_rows = message.rows;
+                    if message.rows == self.export_size {
+                        self.export_in_progress = false;
+                        self.is_exporting = false;
+                        println!("Writing PNG");
+                        if let Ok(file) = File::create(self.export_path.clone()) {
+                            let writer = &mut BufWriter::new(file);
+                            
+                            let mut encoder = png::Encoder::new(writer, self.export_size as u32, self.export_size as u32);
+                            encoder.set_color(png::ColorType::Rgb);
+                            encoder.set_depth(png::BitDepth::Eight);
+                            encoder.set_trns(vec!(0xFFu8, 0xFFu8, 0xFFu8, 0xFFu8));
+                            encoder.set_source_gamma(png::ScaledFloat::new(1.0 / 2.2));
+                            /*let source_chromaticities = png::SourceChromaticities::new(
+                                (0.31270, 0.32900),
+                                (0.64000, 0.33000),
+                                (0.30000, 0.60000),
+                                (0.15000, 0.06000)
+                            );
+                            encoder.set_source_chromaticities(source_chromaticities);*/
+                            let mut writer = encoder.write_header().unwrap();
+                            
+                            let mut pixels : Vec<u8> = Vec::new();
+                            for color in message.image.unwrap().pixels {
+                                pixels.push(color.r());
+                                pixels.push(color.g());
+                                pixels.push(color.b());
+                            }
+                            writer.write_image_data(pixels.as_slice()).unwrap();
+                        }
+                    }
                 }
             } else if let Some(image) = message.image {
                 self.slot[message.slot].image = Some(ctx.load_texture("", image));
@@ -440,7 +502,7 @@ impl eframe::App for EditorApp {
                     let mut clipboard = arboard::Clipboard::new().unwrap();
                     clipboard.set_text(code.clone()).unwrap();
                 }
-                if ui.button("Export").clicked() {
+                if ui.button("Export PNG").clicked() {
                     self.is_exporting = !self.is_exporting;
                 }
             });
@@ -474,19 +536,19 @@ impl eframe::App for EditorApp {
                     let response = ui.add(
                         egui::Slider::new(&mut export_size, 512.0..=8192.0)
                             .show_value(true)
-                            .text("Size"),
+                            .text("Size In Pixels"),
                     );
-                    if response.changed() {
-                        self.export_size = export_size as u32;
+                    if response.changed() && !self.export_in_progress {
+                        self.export_size = export_size.round() as usize;
                     }
                     ui.horizontal(|ui| {
                         let mut path_string: String =
                             self.export_path.to_str().unwrap_or("").into();
-                        let response = ui.add(egui::TextEdit::singleline(&mut path_string));
-                        if response.changed() {
+                        let text_response = ui.add(egui::TextEdit::singleline(&mut path_string));
+                        if text_response.changed() && !self.export_in_progress {
                             self.export_path = std::path::PathBuf::from(path_string);
                         }
-                        if ui.add(egui::Button::new("..")).clicked() {
+                        if ui.add(egui::Button::new("..")).clicked() && !self.export_in_progress {
                             let files = rfd::FileDialog::new()
                                 .add_filter("PNG", &["png"])
                                 .set_directory("/")
@@ -496,6 +558,31 @@ impl eframe::App for EditorApp {
                             }
                         }
                         ui.add(egui::Label::new("File"));
+                    });
+                    ui.horizontal(|ui| {
+                        if ui.add(egui::Button::new("Export")).clicked() && !self.export_in_progress
+                        {
+                            self.export_in_progress = true;
+                            self.slot[EXPORT_SLOT].dna = self.slot[self.focus_slot].dna.clone();
+                            self.slot[EXPORT_SLOT].texture = self.slot[EXPORT_SLOT].get_texture();
+                            self.slot[EXPORT_SLOT].image = None;
+
+                            if self
+                                .tx_render
+                                .send(RenderMessage {
+                                    slot: EXPORT_SLOT,
+                                    width: self.export_size,
+                                    height: self.export_size,
+                                    levels: 1,
+                                    texture: self.slot[EXPORT_SLOT].get_texture(),
+                                })
+                                .is_ok()
+                            {}
+                        }
+                        if self.export_in_progress {
+                            let bar = egui::ProgressBar::new(self.export_rows as f32 / self.export_size as f32);
+                            ui.add(bar);
+                        }
                     });
                 });
         }
