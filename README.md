@@ -11,6 +11,7 @@ This is an alpha version undergoing rapid development and may contain rough edge
 * An endless supply of procedurally generated, self-describing volumetric textures
 * Isotropic value noise, isotropic gradient noise and Voronoi bases
 * Palette generation with Okhsv and Okhsl color spaces
+* Interactive editor (in the example `editor`)
 
 ## Basics
 
@@ -93,7 +94,7 @@ palette(
                 2.4051504,
                 0.0,
                 2.0523214,
-                camo_basis(3902470283, tile_all(), 7, 10, 17),
+                worley_basis(3902470283, tile_all(), 7, 10, 17),
             ),
         ),
     ),
@@ -123,7 +124,7 @@ palette(
             displace(
                 0.15992701,
                 voronoi_basis(1401237949, tile_all(), 10, 25, 7),
-                camo_basis(785949362, tile_all(), 0, 22, 14),
+                worley_basis(785949362, tile_all(), 0, 22, 14),
             ),
         ),
     ),
