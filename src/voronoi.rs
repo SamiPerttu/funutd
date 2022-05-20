@@ -8,23 +8,23 @@ use super::*;
 
 pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
     debug_assert!(i < 26);
-    let p = match i % 13 {
+    let p = match i / 2 {
         // All of the dot products below are non-negative.
         0 => min(1.0, v.dot(vec3a(1.0, 0.0, 0.0))),
         1 => min(1.0, v.dot(vec3a(-1.0, 1.0, 0.0))),
-        2 => min(1.0, v.dot(vec3a(0.0, 1.0, 0.0))),
-        3 => min(1.0, v.dot(vec3a(0.5, 0.5, 0.0))),
-        4 => min(1.0, v.dot(vec3a(0.0, 0.0, 1.0))),
+        2 => min(1.0, v.dot(vec3a(0.0, 0.8, 0.0))),
+        3 => min(1.0, v.dot(vec3a(0.4, 0.4, 0.0))),
+        4 => min(1.0, v.dot(vec3a(0.0, 0.0, 0.6))),
         5 => min(1.0, v.dot(vec3a(-0.5, 0.5, 0.5))),
-        6 => min(1.0, v.dot(vec3a(1.0, -1.0, 1.0))),
+        6 => min(1.0, v.dot(vec3a(0.5, -0.5, 0.5))),
         7 => min(1.0, v.dot(vec3a(0.0, -1.0, 1.0))),
         8 => min(1.0, v.dot(vec3a(-1.0, 0.0, 1.0))),
         9 => min(1.0, v.dot(vec3a(-0.5, -0.5, 1.0))),
-        10 => min(1.0, v.dot(vec3a(0.333, 0.333, 0.333))),
-        11 => min(1.0, v.dot(vec3a(0.5, 0.0, 0.5))),
-        _ => min(1.0, v.dot(vec3a(0.0, 0.5, 0.5))),
+        10 => min(1.0, v.dot(vec3a(0.25, 0.25, 0.25))),
+        11 => min(1.0, v.dot(vec3a(0.4, 0.0, 0.4))),
+        _ => min(1.0, v.dot(vec3a(0.0, 0.3, 0.3))),
     };
-    if i < 13 {
+    if i & 1 == 0 {
         p
     } else {
         1.0 - p
@@ -391,7 +391,7 @@ impl<H: Hasher> Texture for Camo<H> {
         while state.expand_next(&self.hasher) {}
         let color = state.color();
         let d1 = self.ease.at(min(1.0, state.distance_1()));
-        let d2 = self.ease.at(min(1.0, state.distance_2()));
+        let d2 = self.ease.at(min(1.0, state.distance_2() * 0.8));
         let d = self.w0 + self.w1 * d1 + self.w2 * d2;
         vec3a(d * color.x, d * color.y, d * color.z)
     }

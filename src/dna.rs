@@ -146,12 +146,9 @@ impl Dna {
         let mut rnd = Rnd::from_u64(seed);
         let mut dna = Dna::new(rnd.next_u64());
         for (parameter_hash, source_value) in source.genome.iter() {
-            let value = if rnd.next_f32() < mutation_p {
-                rnd.next_u32()
-            } else {
-                *source_value
-            };
-            dna.genome.insert(*parameter_hash, value);
+            if rnd.next_f32() >= mutation_p {
+                dna.genome.insert(*parameter_hash, *source_value);
+            }
         }
         dna
     }

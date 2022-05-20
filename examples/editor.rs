@@ -557,6 +557,7 @@ impl eframe::App for EditorApp {
                         if ui.add(egui::Button::new("Export")).clicked() && !self.export_in_progress
                         {
                             self.export_in_progress = true;
+                            self.export_rows = 0;
                             self.slot[EXPORT_SLOT].dna = self.slot[self.focus_slot].dna.clone();
                             self.slot[EXPORT_SLOT].texture = self.slot[EXPORT_SLOT].get_texture();
                             self.slot[EXPORT_SLOT].image = None;
