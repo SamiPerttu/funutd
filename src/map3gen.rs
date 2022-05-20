@@ -1,6 +1,7 @@
 //! Texture generators.
 
 use super::color::*;
+use super::distance::*;
 use super::dna::*;
 use super::ease::*;
 use super::map3::*;
@@ -9,6 +10,25 @@ use super::math::*;
 use super::noise::*;
 use super::voronoi::*;
 use super::*;
+
+pub fn gen_metric(dna: &mut Dna, name: &str) -> Distance {
+    match dna.get_choice(
+        name,
+        [
+            (1.0, "1-norm"),
+            (3.0, "2-norm"),
+            (1.0, "4-norm"),
+            (1.0, "8-norm"),
+            (1.0, "max norm"),
+        ],
+    ) {
+        0 => Distance::Norm1,
+        1 => Distance::Norm2,
+        2 => Distance::Norm4,
+        3 => Distance::Norm8,
+        _ => Distance::NormMax,
+    }
+}
 
 /// Generate an ease that is smooth near zero.
 pub fn gen_ease_smooth(dna: &mut Dna, name: &str) -> Ease {
@@ -138,10 +158,12 @@ pub fn genmap3(complexity: f32, is_fractal: bool, dna: &mut Dna) -> Box<dyn Text
                 let pattern_y = dna.get_u32_in("Voronoi Y pattern", 0, 25);
                 let pattern_z = dna.get_u32_in("Voronoi Z pattern", 0, 25);
                 let ease = gen_ease(dna, "Voronoi ease");
+                let metric = gen_metric(dna, "distance metric");
                 voronoi(
                     seed,
                     frequency,
                     ease,
+                    metric,
                     tile_all(),
                     pattern_x as usize,
                     pattern_y as usize,
@@ -153,17 +175,20 @@ pub fn genmap3(complexity: f32, is_fractal: bool, dna: &mut Dna) -> Box<dyn Text
                 let w1 = dna.get_f32_in("camo weight 1", 0.0, 0.5);
                 let w2 = dna.get_f32_in("camo weight 2", 0.0, 0.5);
                 let ease = gen_ease(dna, "camo ease");
-                camo(seed, frequency, ease, tile_all(), w0, w1, w2)
+                let metric = gen_metric(dna, "distance metric");
+                camo(seed, frequency, ease, metric, tile_all(), w0, w1, w2)
             }
             _ => {
                 let pattern_x = dna.get_u32_in("Worley X pattern", 0, 25);
                 let pattern_y = dna.get_u32_in("Worley Y pattern", 0, 25);
                 let pattern_z = dna.get_u32_in("Worley Z pattern", 0, 25);
                 let ease = gen_ease(dna, "Worley ease");
+                let metric = gen_metric(dna, "distance metric");
                 worley(
                     seed,
                     frequency,
                     ease,
+                    metric,
                     tile_all(),
                     pattern_x as usize,
                     pattern_y as usize,

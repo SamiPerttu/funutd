@@ -1,6 +1,7 @@
 //! Convenient prelude containing all definitions.
 
 pub use super::color::*;
+pub use super::distance::*;
 pub use super::dna::*;
 pub use super::ease::*;
 pub use super::map3::*;

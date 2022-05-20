@@ -4,10 +4,10 @@
 use eframe::egui;
 use funutd::prelude::*;
 use rayon::prelude::*;
-use std::sync::mpsc;
-use std::thread;
 use std::fs::File;
 use std::io::BufWriter;
+use std::sync::mpsc;
+use std::thread;
 
 /// Convert texture value to u8. Canonical texture range is -1...1.
 pub fn convert_u8(x: f32) -> u8 {
@@ -327,6 +327,7 @@ impl EditorApp {
             {}
         }
     }
+    /// Call after altering one of the visible DNA slots.
     pub fn dna_updated(&mut self, slot: usize) {
         self.slot[slot].texture = self.slot[slot].get_texture();
         if self
@@ -357,19 +358,22 @@ impl eframe::App for EditorApp {
                     if message.rows == self.export_size {
                         self.export_in_progress = false;
                         self.is_exporting = false;
-                        println!("Writing PNG");
                         if let Ok(file) = File::create(self.export_path.clone()) {
                             let writer = &mut BufWriter::new(file);
-                            
-                            let mut encoder = png::Encoder::new(writer, self.export_size as u32, self.export_size as u32);
+
+                            let mut encoder = png::Encoder::new(
+                                writer,
+                                self.export_size as u32,
+                                self.export_size as u32,
+                            );
                             encoder.set_color(png::ColorType::Rgb);
                             encoder.set_depth(png::BitDepth::Eight);
-                            encoder.set_trns(vec!(0xFFu8, 0xFFu8, 0xFFu8, 0xFFu8));
+                            encoder.set_trns(vec![0xFFu8, 0xFFu8, 0xFFu8, 0xFFu8]);
                             encoder.set_source_gamma(png::ScaledFloat::new(1.0 / 2.2));
-                            
+
                             let mut writer = encoder.write_header().unwrap();
-                            
-                            let mut pixels : Vec<u8> = Vec::new();
+
+                            let mut pixels: Vec<u8> = Vec::new();
                             for color in message.image.unwrap().pixels {
                                 pixels.push(color.r());
                                 pixels.push(color.g());
@@ -499,6 +503,12 @@ impl eframe::App for EditorApp {
                 if ui.button("Export PNG").clicked() {
                     self.is_exporting = !self.is_exporting;
                 }
+                if ui.button("Randomize All").clicked() {
+                    for i in 0..VISIBLE_SLOTS {
+                        self.slot[i].dna = Dna::new(self.rnd.next_u64());
+                        self.dna_updated(i);
+                    }
+                }
             });
             ui.code(code);
         });
@@ -575,7 +585,9 @@ impl eframe::App for EditorApp {
                             {}
                         }
                         if self.export_in_progress {
-                            let bar = egui::ProgressBar::new(self.export_rows as f32 / self.export_size as f32);
+                            let bar = egui::ProgressBar::new(
+                                self.export_rows as f32 / self.export_size as f32,
+                            );
                             ui.add(bar);
                         }
                     });

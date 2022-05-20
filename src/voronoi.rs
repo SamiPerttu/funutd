@@ -1,5 +1,6 @@
 //! Voronoi texture basis.
 
+use super::distance::*;
 use super::ease::*;
 use super::hash::*;
 use super::map3base::*;
@@ -37,6 +38,7 @@ pub struct VoronoiState {
     min_cell: Vec3i,
     /// Offset of maximum processed cell.
     max_cell: Vec3i,
+    metric: Distance,
     /// Current distances to closest feature points found.
     distance1: f32,
     distance2: f32,
@@ -46,11 +48,18 @@ pub struct VoronoiState {
 }
 
 impl VoronoiState {
-    pub fn new<H: Hasher>(hasher: &H, seed: u64, frequency: f32, point: Vec3a) -> Self {
+    pub fn new<H: Hasher>(
+        hasher: &H,
+        seed: u64,
+        frequency: f32,
+        metric: Distance,
+        point: Vec3a,
+    ) -> Self {
         Self {
             basis: hasher.query(seed, frequency, point),
             min_cell: vec3i(0, 0, 0),
             max_cell: vec3i(0, 0, 0),
+            metric,
             distance1: f32::INFINITY,
             distance2: f32::INFINITY,
             distance3: f32::INFINITY,
@@ -166,9 +175,9 @@ impl VoronoiState {
         for i in 0..n {
             // Feature location.
             let p = hash_01(hash);
-            let distance2: f32 = (p + offset).length_squared();
-            if distance2 < self.distance3 * self.distance3 {
-                let distance = sqrt(distance2);
+            let delta = p + offset;
+            let distance = self.metric.compute(delta);
+            if distance < self.distance3 {
                 if distance < self.distance1 {
                     self.distance3 = self.distance2;
                     self.distance2 = self.distance1;
@@ -180,7 +189,7 @@ impl VoronoiState {
                     self.distance3 = distance;
                 }
             }
-            let color_w = exp(50.0 - distance2 * 25.0);
+            let color_w = exp(50.0 - distance * 50.0);
             let color = hash_11(hash64a(hash));
             self.color += color * color_w;
             self.color_weight += color_w;
@@ -197,6 +206,7 @@ pub struct Voronoi<H: Hasher> {
     frequency: f32,
     ease: Ease,
     hasher: H,
+    metric: Distance,
     pattern_x: usize,
     pattern_y: usize,
     pattern_z: usize,
@@ -205,7 +215,13 @@ pub struct Voronoi<H: Hasher> {
 impl<H: Hasher> Texture for Voronoi<H> {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
-        let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
+        let mut state = VoronoiState::new(
+            &self.hasher,
+            self.seed,
+            frequency,
+            self.metric.clone(),
+            point,
+        );
         state.process_cell(&self.hasher, 0, 0, 0);
         while state.expand_next(&self.hasher) {}
         let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
@@ -218,10 +234,11 @@ impl<H: Hasher> Texture for Voronoi<H> {
 
     fn get_code(&self) -> String {
         format!(
-            "voronoi({}, {}, {}, {}, {}, {}, {})",
+            "voronoi({}, {}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.frequency,
             self.ease.get_code(),
+            self.metric.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -231,9 +248,10 @@ impl<H: Hasher> Texture for Voronoi<H> {
 
     fn get_basis_code(&self) -> String {
         format!(
-            "voronoi_basis({}, {}, {}, {}, {}, {})",
+            "voronoi_basis({}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.ease.get_code(),
+            self.metric.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -246,6 +264,7 @@ pub fn voronoi<H: 'static + Hasher>(
     seed: u64,
     frequency: f32,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -255,6 +274,7 @@ pub fn voronoi<H: 'static + Hasher>(
         seed,
         frequency,
         ease,
+        metric,
         hasher,
         pattern_x,
         pattern_y,
@@ -265,6 +285,7 @@ pub fn voronoi<H: 'static + Hasher>(
 pub fn voronoi_basis<H: 'static + Hasher>(
     seed: u64,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -274,6 +295,7 @@ pub fn voronoi_basis<H: 'static + Hasher>(
         seed,
         frequency: 1.0,
         ease,
+        metric,
         hasher,
         pattern_x,
         pattern_y,
@@ -286,6 +308,7 @@ pub struct Worley<H: Hasher> {
     seed: u64,
     frequency: f32,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -295,7 +318,13 @@ pub struct Worley<H: Hasher> {
 impl<H: Hasher> Texture for Worley<H> {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
-        let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
+        let mut state = VoronoiState::new(
+            &self.hasher,
+            self.seed,
+            frequency,
+            self.metric.clone(),
+            point,
+        );
         state.process_cell(&self.hasher, 0, 0, 0);
         while state.expand_next(&self.hasher) {}
         let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
@@ -309,10 +338,11 @@ impl<H: Hasher> Texture for Worley<H> {
 
     fn get_code(&self) -> String {
         format!(
-            "worley({}, {}, {}, {}, {}, {}, {})",
+            "worley({}, {}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.frequency,
             self.ease.get_code(),
+            self.metric.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -322,9 +352,10 @@ impl<H: Hasher> Texture for Worley<H> {
 
     fn get_basis_code(&self) -> String {
         format!(
-            "worley({}, {}, {}, {}, {}, {})",
+            "worley({}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.ease.get_code(),
+            self.metric.get_code(),
             self.hasher.get_code(),
             self.pattern_x,
             self.pattern_y,
@@ -337,6 +368,7 @@ pub fn worley<H: 'static + Hasher>(
     seed: u64,
     frequency: f32,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -346,6 +378,7 @@ pub fn worley<H: 'static + Hasher>(
         seed,
         frequency,
         ease,
+        metric,
         hasher,
         pattern_x,
         pattern_y,
@@ -356,6 +389,7 @@ pub fn worley<H: 'static + Hasher>(
 pub fn worley_basis<H: 'static + Hasher>(
     seed: u64,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     pattern_x: usize,
     pattern_y: usize,
@@ -365,6 +399,7 @@ pub fn worley_basis<H: 'static + Hasher>(
         seed,
         frequency: 1.0,
         ease,
+        metric,
         hasher,
         pattern_x,
         pattern_y,
@@ -377,6 +412,7 @@ pub struct Camo<H: Hasher> {
     seed: u64,
     frequency: f32,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     w0: f32,
     w1: f32,
@@ -386,7 +422,13 @@ pub struct Camo<H: Hasher> {
 impl<H: Hasher> Texture for Camo<H> {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
-        let mut state = VoronoiState::new(&self.hasher, self.seed, frequency, point);
+        let mut state = VoronoiState::new(
+            &self.hasher,
+            self.seed,
+            frequency,
+            self.metric.clone(),
+            point,
+        );
         state.process_cell(&self.hasher, 0, 0, 0);
         while state.expand_next(&self.hasher) {}
         let color = state.color();
@@ -398,10 +440,11 @@ impl<H: Hasher> Texture for Camo<H> {
 
     fn get_code(&self) -> String {
         format!(
-            "camo({}, {}, {}, {}, {:?}, {:?}, {:?})",
+            "camo({}, {}, {}, {}, {}, {:?}, {:?}, {:?})",
             self.seed,
             self.frequency,
             self.ease.get_code(),
+            self.metric.get_code(),
             self.hasher.get_code(),
             self.w0,
             self.w1,
@@ -411,9 +454,10 @@ impl<H: Hasher> Texture for Camo<H> {
 
     fn get_basis_code(&self) -> String {
         format!(
-            "camo_basis({}, {}, {}, {:?}, {:?}, {:?})",
+            "camo_basis({}, {}, {}, {}, {:?}, {:?}, {:?})",
             self.seed,
             self.ease.get_code(),
+            self.metric.get_code(),
             self.hasher.get_code(),
             self.w0,
             self.w1,
@@ -426,6 +470,7 @@ pub fn camo<H: 'static + Hasher>(
     seed: u64,
     frequency: f32,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     w0: f32,
     w1: f32,
@@ -435,6 +480,7 @@ pub fn camo<H: 'static + Hasher>(
         seed,
         frequency,
         ease,
+        metric,
         hasher,
         w0,
         w1,
@@ -445,6 +491,7 @@ pub fn camo<H: 'static + Hasher>(
 pub fn camo_basis<H: 'static + Hasher>(
     seed: u64,
     ease: Ease,
+    metric: Distance,
     hasher: H,
     w0: f32,
     w1: f32,
@@ -454,6 +501,7 @@ pub fn camo_basis<H: 'static + Hasher>(
         seed,
         frequency: 1.0,
         ease,
+        metric,
         hasher,
         w0,
         w1,

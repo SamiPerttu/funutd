@@ -1,6 +1,7 @@
 #[allow(non_snake_case)]
 #[allow(clippy::excessive_precision)]
 pub mod color;
+pub mod distance;
 #[allow(clippy::too_many_arguments)]
 pub mod dna;
 pub mod ease;
@@ -15,6 +16,7 @@ pub mod noise;
 pub mod prelude;
 pub mod rnd;
 pub mod vec;
+#[allow(clippy::too_many_arguments)]
 pub mod voronoi;
 
 pub use rnd::Rnd;
