@@ -124,6 +124,8 @@ palette(
 
 ![](example1.png "texture example")
 
+These examples are from an earlier version of FunUTD.
+
 ---
 
 ```rust
