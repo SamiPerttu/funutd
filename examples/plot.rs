@@ -23,10 +23,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let texture = palette(
         Space::HSL,
+        0.5,
         0.16073917,
         0.4019736,
         0.2500405,
-        0.23468459,
         displace(
             0.10390177,
             layer(
@@ -52,7 +52,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     2.4051504,
                     0.0,
                     2.0523214,
-                    worley_basis(3902470283, Ease::Id, Distance::Norm2, tile_all(), 7, 10, 17),
+                    camo_basis(
+                        3902470283,
+                        Ease::Id,
+                        Distance::Norm2,
+                        tile_all(),
+                        0.1,
+                        0.1,
+                        0.1,
+                    ),
                 ),
             ),
         ),
@@ -92,10 +100,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let texture = palette(
         Space::HSL,
+        0.5,
         0.550072,
         0.22867462,
         0.16526648,
-        0.31744483,
         saturate(
             8.597511,
             fractal(
@@ -108,7 +116,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 displace(
                     0.15992701,
                     voronoi_basis(1401237949, Ease::Id, Distance::Norm2, tile_all(), 10, 25, 7),
-                    worley_basis(785949362, Ease::Id, Distance::Norm2, tile_all(), 0, 22, 14),
+                    camo_basis(
+                        785949362,
+                        Ease::Id,
+                        Distance::Norm2,
+                        tile_all(),
+                        0.1,
+                        0.1,
+                        0.1,
+                    ),
                 ),
             ),
         ),

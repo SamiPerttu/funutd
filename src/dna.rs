@@ -32,7 +32,7 @@ pub struct Parameter {
     name: String,
     value: String,
     address: Vec<u32>,
-    range: u32,
+    maximum: u32,
     raw: u32,
     hash: u64,
     choices: Vec<String>,
@@ -44,7 +44,7 @@ impl Parameter {
         name: String,
         value: String,
         address: Vec<u32>,
-        range: u32,
+        maximum: u32,
         raw: u32,
         hash: u64,
         choices: Vec<String>,
@@ -54,7 +54,7 @@ impl Parameter {
             name,
             value,
             address,
-            range,
+            maximum,
             raw,
             hash,
             choices,
@@ -72,15 +72,11 @@ impl Parameter {
     pub fn address(&self) -> &Vec<u32> {
         &self.address
     }
-    pub fn range(&self) -> u32 {
-        self.range
+    pub fn maximum(&self) -> u32 {
+        self.maximum
     }
-    pub fn range_f32(&self) -> f32 {
-        if self.range > 0 {
-            self.range as f32
-        } else {
-            pow(2.0, 32.0)
-        }
+    pub fn maximum_f32(&self) -> f32 {
+        self.maximum as f32
     }
     pub fn raw(&self) -> u32 {
         self.raw
@@ -105,8 +101,9 @@ pub struct Dna {
     genome: HashMap<u64, u32>,
     /// Randomness source.
     rnd: Rnd,
+    /// Parameters are recorded in interactive mode.
     interactive: bool,
-    /// Parameters.
+    /// Drawn parameters for interactive display and editing.
     parameters: Vec<Parameter>,
 }
 
@@ -123,6 +120,7 @@ impl Dna {
         }
     }
 
+    /// Sets the value of a gene.
     pub fn set_value(&mut self, hash: u64, value: u32) {
         self.genome.insert(hash, value);
     }
@@ -137,6 +135,7 @@ impl Dna {
         self.interactive = interactive;
     }
 
+    /// Parameter accessor.
     pub fn parameters(&self) -> &Vec<Parameter> {
         &self.parameters
     }
@@ -153,19 +152,20 @@ impl Dna {
         dna
     }
 
+    /// Adds a parameter.
     fn add_parameter(
         &mut self,
         kind: ParameterKind,
         name: String,
         value: String,
         address: Vec<u32>,
-        range: u32,
+        maximum: u32,
         raw: u32,
         hash: u64,
         choices: Vec<String>,
     ) {
         self.parameters.push(Parameter::new(
-            kind, name, value, address, range, raw, hash, choices,
+            kind, name, value, address, maximum, raw, hash, choices,
         ));
     }
 
@@ -219,7 +219,7 @@ impl Dna {
                 name.into(),
                 format!("{:?}", value),
                 self.address.clone(),
-                0,
+                0xffffffff,
                 value,
                 hash,
                 Vec::new(),
@@ -239,7 +239,7 @@ impl Dna {
                 name.into(),
                 format!("{:?}", value),
                 self.address.clone(),
-                maximum - minimum + 1,
+                maximum - minimum,
                 value,
                 hash,
                 Vec::new(),
@@ -259,7 +259,7 @@ impl Dna {
                 name.into(),
                 format!("{0:.3}", value_f),
                 self.address.clone(),
-                0,
+                0xffffffff,
                 value,
                 hash,
                 Vec::new(),
@@ -279,7 +279,7 @@ impl Dna {
                 name.into(),
                 format!("{0:.3}", value_f),
                 self.address.clone(),
-                0,
+                0xffffffff,
                 value,
                 hash,
                 Vec::new(),
@@ -299,7 +299,7 @@ impl Dna {
                 name.into(),
                 format!("{0:.3}", value_f),
                 self.address.clone(),
-                0,
+                0xffffffff,
                 value,
                 hash,
                 Vec::new(),
@@ -339,7 +339,7 @@ impl Dna {
                 name.into(),
                 choices[choice_index].1.to_string(),
                 self.address.clone(),
-                choices.len() as u32,
+                choices.len() as u32 - 1,
                 choice_index as u32,
                 hash,
                 c,

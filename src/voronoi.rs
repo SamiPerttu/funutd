@@ -23,7 +23,7 @@ pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
         9 => min(1.0, v.dot(vec3a(-0.5, -0.5, 1.0))),
         10 => min(1.0, v.dot(vec3a(0.25, 0.25, 0.25))),
         11 => min(1.0, v.dot(vec3a(0.4, 0.0, 0.4))),
-        _ => min(1.0, v.dot(vec3a(0.0, 0.3, 0.3))),
+        _ => min(1.0, v.dot(vec3a(0.0, 0.35, 0.35))),
     };
     if i & 1 == 0 {
         p
@@ -43,6 +43,7 @@ pub struct VoronoiState {
     distance1: f32,
     distance2: f32,
     distance3: f32,
+    color_sharpness: f32,
     color: Vec3a,
     color_weight: f32,
 }
@@ -53,6 +54,7 @@ impl VoronoiState {
         seed: u64,
         frequency: f32,
         metric: Distance,
+        color_sharpness: f32,
         point: Vec3a,
     ) -> Self {
         Self {
@@ -63,6 +65,7 @@ impl VoronoiState {
             distance1: f32::INFINITY,
             distance2: f32::INFINITY,
             distance3: f32::INFINITY,
+            color_sharpness,
             color: vec3a(0.0, 0.0, 0.0),
             color_weight: 0.0,
         }
@@ -189,7 +192,7 @@ impl VoronoiState {
                     self.distance3 = distance;
                 }
             }
-            let color_w = exp(50.0 - distance * 50.0);
+            let color_w = exp(80.0 - distance * lerp(15.0, 100.0, self.color_sharpness));
             let color = hash_11(hash64a(hash));
             self.color += color * color_w;
             self.color_weight += color_w;
@@ -200,7 +203,7 @@ impl VoronoiState {
     }
 }
 
-/// Voronoi basis. Cell colors are omitted here, unlike in Worley and Camo.
+/// Voronoi basis. Cell colors are omitted here, unlike in Camo.
 pub struct Voronoi<H: Hasher> {
     seed: u64,
     frequency: f32,
@@ -220,6 +223,7 @@ impl<H: Hasher> Texture for Voronoi<H> {
             self.seed,
             frequency,
             self.metric.clone(),
+            1.0,
             point,
         );
         state.process_cell(&self.hasher, 0, 0, 0);
@@ -234,7 +238,7 @@ impl<H: Hasher> Texture for Voronoi<H> {
 
     fn get_code(&self) -> String {
         format!(
-            "voronoi({}, {}, {}, {}, {}, {}, {}, {})",
+            "voronoi({}, {:?}, {}, {}, {}, {}, {}, {})",
             self.seed,
             self.frequency,
             self.ease.get_code(),
@@ -303,110 +307,6 @@ pub fn voronoi_basis<H: 'static + Hasher>(
     })
 }
 
-/// Colored Worley basis. Like Voronoi but with cell colors applied.
-pub struct Worley<H: Hasher> {
-    seed: u64,
-    frequency: f32,
-    ease: Ease,
-    metric: Distance,
-    hasher: H,
-    pattern_x: usize,
-    pattern_y: usize,
-    pattern_z: usize,
-}
-
-impl<H: Hasher> Texture for Worley<H> {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let frequency = frequency.unwrap_or(self.frequency);
-        let mut state = VoronoiState::new(
-            &self.hasher,
-            self.seed,
-            frequency,
-            self.metric.clone(),
-            point,
-        );
-        state.process_cell(&self.hasher, 0, 0, 0);
-        while state.expand_next(&self.hasher) {}
-        let d_vec = vec3a(state.distance_1(), state.distance_2(), state.distance_3());
-        let color = state.color();
-        vec3a(
-            (self.ease.at(voronoi_pattern(self.pattern_x, d_vec)) * 2.0 - 1.0) * color.x,
-            (self.ease.at(voronoi_pattern(self.pattern_y, d_vec)) * 2.0 - 1.0) * color.y,
-            (self.ease.at(voronoi_pattern(self.pattern_z, d_vec)) * 2.0 - 1.0) * color.z,
-        )
-    }
-
-    fn get_code(&self) -> String {
-        format!(
-            "worley({}, {}, {}, {}, {}, {}, {}, {})",
-            self.seed,
-            self.frequency,
-            self.ease.get_code(),
-            self.metric.get_code(),
-            self.hasher.get_code(),
-            self.pattern_x,
-            self.pattern_y,
-            self.pattern_z
-        )
-    }
-
-    fn get_basis_code(&self) -> String {
-        format!(
-            "worley({}, {}, {}, {}, {}, {}, {})",
-            self.seed,
-            self.ease.get_code(),
-            self.metric.get_code(),
-            self.hasher.get_code(),
-            self.pattern_x,
-            self.pattern_y,
-            self.pattern_z
-        )
-    }
-}
-
-pub fn worley<H: 'static + Hasher>(
-    seed: u64,
-    frequency: f32,
-    ease: Ease,
-    metric: Distance,
-    hasher: H,
-    pattern_x: usize,
-    pattern_y: usize,
-    pattern_z: usize,
-) -> Box<dyn Texture> {
-    Box::new(Worley {
-        seed,
-        frequency,
-        ease,
-        metric,
-        hasher,
-        pattern_x,
-        pattern_y,
-        pattern_z,
-    })
-}
-
-pub fn worley_basis<H: 'static + Hasher>(
-    seed: u64,
-    ease: Ease,
-    metric: Distance,
-    hasher: H,
-    pattern_x: usize,
-    pattern_y: usize,
-    pattern_z: usize,
-) -> Box<dyn Texture> {
-    Box::new(Worley {
-        seed,
-        frequency: 1.0,
-        ease,
-        metric,
-        hasher,
-        pattern_x,
-        pattern_y,
-        pattern_z,
-    })
-}
-
 /// Camo basis. A colored Worley basis.
 pub struct Camo<H: Hasher> {
     seed: u64,
@@ -414,9 +314,9 @@ pub struct Camo<H: Hasher> {
     ease: Ease,
     metric: Distance,
     hasher: H,
-    w0: f32,
-    w1: f32,
-    w2: f32,
+    border: f32,
+    sharpness: f32,
+    gradient: f32,
 }
 
 impl<H: Hasher> Texture for Camo<H> {
@@ -427,28 +327,37 @@ impl<H: Hasher> Texture for Camo<H> {
             self.seed,
             frequency,
             self.metric.clone(),
+            self.sharpness,
             point,
         );
         state.process_cell(&self.hasher, 0, 0, 0);
         while state.expand_next(&self.hasher) {}
-        let color = state.color();
+        let mut color = state.color();
+        if state.distance_1() + self.border > state.distance_2() {
+            color = lerp(
+                Vec3a::zero(),
+                color,
+                1.0 - self
+                    .ease
+                    .at(1.0 - (state.distance_2() - state.distance_1()) / self.border),
+            );
+        }
         let d1 = self.ease.at(min(1.0, state.distance_1()));
-        let d2 = self.ease.at(min(1.0, state.distance_2() * 0.8));
-        let d = self.w0 + self.w1 * d1 + self.w2 * d2;
+        let d = 1.0 - 0.5 * self.gradient * d1;
         vec3a(d * color.x, d * color.y, d * color.z)
     }
 
     fn get_code(&self) -> String {
         format!(
-            "camo({}, {}, {}, {}, {}, {:?}, {:?}, {:?})",
+            "camo({}, {:?}, {}, {}, {}, {:?}, {:?}, {:?})",
             self.seed,
             self.frequency,
             self.ease.get_code(),
             self.metric.get_code(),
             self.hasher.get_code(),
-            self.w0,
-            self.w1,
-            self.w2
+            self.border,
+            self.sharpness,
+            self.gradient
         )
     }
 
@@ -459,9 +368,9 @@ impl<H: Hasher> Texture for Camo<H> {
             self.ease.get_code(),
             self.metric.get_code(),
             self.hasher.get_code(),
-            self.w0,
-            self.w1,
-            self.w2
+            self.border,
+            self.sharpness,
+            self.gradient
         )
     }
 }
@@ -472,9 +381,9 @@ pub fn camo<H: 'static + Hasher>(
     ease: Ease,
     metric: Distance,
     hasher: H,
-    w0: f32,
-    w1: f32,
-    w2: f32,
+    border: f32,
+    sharpness: f32,
+    gradient: f32,
 ) -> Box<dyn Texture> {
     Box::new(Camo {
         seed,
@@ -482,9 +391,9 @@ pub fn camo<H: 'static + Hasher>(
         ease,
         metric,
         hasher,
-        w0,
-        w1,
-        w2,
+        border,
+        sharpness,
+        gradient,
     })
 }
 
@@ -493,9 +402,9 @@ pub fn camo_basis<H: 'static + Hasher>(
     ease: Ease,
     metric: Distance,
     hasher: H,
-    w0: f32,
-    w1: f32,
-    w2: f32,
+    border: f32,
+    sharpness: f32,
+    gradient: f32,
 ) -> Box<dyn Texture> {
     Box::new(Camo {
         seed,
@@ -503,8 +412,8 @@ pub fn camo_basis<H: 'static + Hasher>(
         ease,
         metric,
         hasher,
-        w0,
-        w1,
-        w2,
+        border,
+        sharpness,
+        gradient,
     })
 }

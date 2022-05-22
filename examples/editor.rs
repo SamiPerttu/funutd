@@ -255,6 +255,7 @@ struct EditorApp {
     can_exit: bool,
     is_exiting: bool,
     is_exporting: bool,
+    light_mode: bool,
     export_size: usize,
     export_path: std::path::PathBuf,
     export_in_progress: bool,
@@ -272,6 +273,7 @@ impl EditorApp {
             can_exit: false,
             is_exiting: false,
             is_exporting: false,
+            light_mode: false,
             export_size: 4096,
             export_path: std::path::PathBuf::new(),
             export_in_progress: false,
@@ -388,6 +390,12 @@ impl eframe::App for EditorApp {
             }
         }
 
+        ctx.set_visuals(if self.light_mode {
+            egui::Visuals::light()
+        } else {
+            egui::Visuals::dark()
+        });
+
         let mut id = 0;
 
         egui::SidePanel::left("mosaic panel").show(ctx, |ui| {
@@ -468,18 +476,68 @@ impl eframe::App for EditorApp {
                                     });
                             });
                         } else {
-                            ui.label(parameter.name());
-                            let mut my_f32 = parameter.raw() as f32;
-                            let response = ui.add(
-                                egui::Slider::new(&mut my_f32, 0.0..=parameter.range_f32() - 1.0)
-                                    .show_value(false)
-                                    .text(parameter.value()),
-                            );
-                            if response.changed() {
-                                self.slot[self.focus_slot]
-                                    .dna
-                                    .set_value(parameter.hash(), my_f32 as u32);
-                                self.dna_updated(self.focus_slot);
+                            match parameter.kind() {
+                                ParameterKind::Ordered => {
+                                    ui.label(parameter.name());
+                                    let mut my_f32 = parameter.raw() as f32;
+                                    let response = ui.add(
+                                        egui::Slider::new(
+                                            &mut my_f32,
+                                            0.0..=parameter.maximum_f32(),
+                                        )
+                                        .show_value(false)
+                                        .text(parameter.value()),
+                                    );
+                                    if response.changed() {
+                                        self.slot[self.focus_slot]
+                                            .dna
+                                            .set_value(parameter.hash(), my_f32 as u32);
+                                        self.dna_updated(self.focus_slot);
+                                    }
+                                }
+                                ParameterKind::Categorical => {
+                                    ui.label(parameter.name());
+                                    if parameter.maximum() > 100 {
+                                        ui.label(parameter.value());
+                                        if ui.add(egui::Button::new("Randomize")).clicked() {
+                                            self.slot[self.focus_slot]
+                                                .dna
+                                                .set_value(parameter.hash(), self.rnd.next_u32());
+                                            self.dna_updated(self.focus_slot);
+                                        }
+                                        if ui.add(egui::Button::new("-")).clicked() {
+                                            self.slot[self.focus_slot].dna.set_value(
+                                                parameter.hash(),
+                                                parameter.raw().wrapping_sub(1),
+                                            );
+                                            self.dna_updated(self.focus_slot);
+                                        }
+                                        if ui.add(egui::Button::new("+")).clicked() {
+                                            self.slot[self.focus_slot].dna.set_value(
+                                                parameter.hash(),
+                                                parameter.raw().wrapping_add(1),
+                                            );
+                                            self.dna_updated(self.focus_slot);
+                                        }
+                                    } else {
+                                        let mut my_f32 = parameter.raw() as f32;
+                                        let response = ui.add(
+                                            egui::Slider::new(
+                                                &mut my_f32,
+                                                0.0..=parameter.maximum_f32(),
+                                            )
+                                            .show_value(false)
+                                            .text(parameter.value())
+                                            .step_by(1.0),
+                                        );
+                                        if response.changed() {
+                                            self.slot[self.focus_slot]
+                                                .dna
+                                                .set_value(parameter.hash(), my_f32 as u32);
+                                            self.dna_updated(self.focus_slot);
+                                        }
+                                    }
+                                }
                             }
                         }
                     });
@@ -496,6 +554,14 @@ impl eframe::App for EditorApp {
             }
             let code = self.slot[self.focus_slot].texture.get_code();
             ui.horizontal_wrapped(|ui| {
+                if self.light_mode {
+                    if ui.button("Dark Mode").clicked() {
+                        self.light_mode = false;
+                    }
+                } else if ui.button("Light Mode").clicked() {
+                    self.light_mode = true;
+                }
+
                 if ui.button("Copy Code").clicked() {
                     let mut clipboard = arboard::Clipboard::new().unwrap();
                     clipboard.set_text(code.clone()).unwrap();

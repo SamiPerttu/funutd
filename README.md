@@ -22,12 +22,12 @@ The canonical range of texture values is -1...1 in each component.
 This applies to the palette component as well.
 
 Some components may slightly exceed the range, while others may come under.
-Many unary nodes such as `reflect`, `vreflect` and `saturate` remap
+Many unary nodes such as `reflect`, `vreflect`, `saturate` and `overdrive` remap
 any range back to -1...1.
 
-Data for procedural generation is contained in `Dna` objects.
+Data for procedural generation is contained in `Dna` objects, which contain
+the necessary context that is threaded through the generation process.
 Generator functions draw whatever data they need from the supplied `Dna` object.
-`Dna` objects can be constructed full of random data from a seed value.
 
 Textures can describe themself, that is, print the code that generates them.
 This is done using the `get_code` method. Obtained codes can be copied and
