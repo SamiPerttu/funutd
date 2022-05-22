@@ -83,6 +83,8 @@ where they can be edited as well.
 
 ## Examples
 
+These examples are from an earlier version of FunUTD.
+
 ```rust
 palette(
     Space::HSL,
@@ -123,8 +125,6 @@ palette(
 ```
 
 ![](example1.png "texture example")
-
-These examples are from an earlier version of FunUTD.
 
 ---
 
