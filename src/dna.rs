@@ -146,7 +146,21 @@ impl Dna {
         let mut dna = Dna::new(rnd.next_u64());
         for (parameter_hash, source_value) in source.genome.iter() {
             if rnd.next_f32() >= mutation_p {
-                dna.genome.insert(*parameter_hash, *source_value);
+                dna.set_value(*parameter_hash, *source_value);
+            }
+        }
+        dna
+    }
+
+    /// Finetunes the source Dna by only modifying non-structural parameters.
+    /// Requires interactive mode.
+    pub fn finetune(source: &Dna, seed: u64, mutation_p: f32) -> Dna {
+        assert!(source.is_interactive());
+        let mut rnd = Rnd::from_u64(seed);
+        let mut dna = Dna::new(rnd.next_u64());
+        for parameter in source.parameters() {
+            if !parameter.choices().is_empty() || rnd.next_f32() >= mutation_p {
+                dna.set_value(parameter.hash(), parameter.raw());
             }
         }
         dna

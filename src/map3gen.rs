@@ -16,7 +16,7 @@ pub fn gen_metric(dna: &mut Dna, name: &str) -> Distance {
         name,
         [
             (1.0, "1-norm"),
-            (3.0, "2-norm"),
+            (4.0, "2-norm"),
             (1.0, "4-norm"),
             (1.0, "8-norm"),
             (1.0, "max norm"),
@@ -37,7 +37,7 @@ pub fn gen_ease_smooth(dna: &mut Dna, name: &str) -> Ease {
         [
             (1.0, "id"),
             (1.0, "smooth3"),
-            (1.0, "smooth5"),
+            (2.0, "smooth5"),
             (1.0, "smooth7"),
             (1.0, "smooth9"),
             (1.0, "squared"),
@@ -63,7 +63,7 @@ pub fn gen_ease(dna: &mut Dna, name: &str) -> Ease {
         [
             (1.0, "id"),
             (1.0, "smooth3"),
-            (1.0, "smooth5"),
+            (2.0, "smooth5"),
             (1.0, "smooth7"),
             (1.0, "smooth9"),
             (1.0, "sqrt"),

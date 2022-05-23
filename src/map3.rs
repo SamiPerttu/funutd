@@ -376,32 +376,6 @@ pub fn layer(
     })
 }
 
-/*
-        let v0 = self.texture.at(point);
-        let mut v = Vec3a(v0.x, v0.y, v0.z);
-        let mut v1: Vec3a = v;
-        let mut v2: Vec3a = v;
-        let mut v3: Vec3a = v;
-        for _i in 0 .. 12 {
-            let u = Vec3a(v.x * v.x - v.y * v.y - v.z * v.z + v0.x, 2.0 * v.x * v.y + v0.y, 2.0 * (v.x - v.y) * v.z + v0.z);
-            //u = Vec3a(cubed(v.x) - 3.0 * v.x * (squared(v.y) + squared(v.z)) + v0.x, -cubed(v.y) + 3.0 * v.y * squared(v.x) - v.y * squared(v.z) + v0.y, cubed(v.z) - 3.0 * v.z * squared(v.x) + v.z * squared(v.y) + v0.z);
-            //u = Vec3a(v.x * v.x - v.y * v.y + v0.x, 2.0 * v.x * v.y + v0.y, 0.0);
-            if u.length_squared() > 4.0 {
-                let w = (u.length_squared() - 4.0).tanh();
-                //return v0; // Vec3a(-1.0, -1.0, -1.0);
-                return v3 * (1.0 - w) + v2 * w;
-                //return v * (1.0 - w) * 0.5 + u * w * 0.5;
-            }
-            v3 = v2;
-            v2 = v1;
-            v1 = v;
-            v = u;
-        }
-        //u * 0.5
-        v3
-
-*/
-
 /// Displaces lookup of one texture by values from another texture.
 pub struct Displace {
     amount: f32,

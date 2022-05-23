@@ -250,12 +250,19 @@ fn main() {
     );
 }
 
+#[derive(PartialEq)]
+enum MutationMode {
+    Any,
+    Finetune,
+}
+
 struct EditorApp {
     rnd: Rnd,
     can_exit: bool,
     is_exiting: bool,
     is_exporting: bool,
     light_mode: bool,
+    mutation_mode: MutationMode,
     export_size: usize,
     export_path: std::path::PathBuf,
     export_in_progress: bool,
@@ -274,6 +281,7 @@ impl EditorApp {
             is_exiting: false,
             is_exporting: false,
             light_mode: false,
+            mutation_mode: MutationMode::Any,
             export_size: 4096,
             export_path: std::path::PathBuf::new(),
             export_in_progress: false,
@@ -314,7 +322,10 @@ impl EditorApp {
             if mutate_i == source {
                 continue;
             }
-            self.slot[mutate_i].dna = Dna::mutate(&self.slot[source].dna, self.rnd.next_u64(), 0.2);
+            self.slot[mutate_i].dna = match self.mutation_mode {
+                MutationMode::Any => Dna::mutate(&self.slot[source].dna, self.rnd.next_u64(), 0.2),
+                MutationMode::Finetune => Dna::finetune(&self.slot[source].dna, self.rnd.next_u64(), 0.2),
+            };
             self.slot[mutate_i].texture = self.slot[mutate_i].get_texture();
             if self
                 .tx_render
@@ -443,6 +454,14 @@ impl eframe::App for EditorApp {
                     }
                 }
             });
+
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| {
+                    ui.label("Mutation Mode");
+                    ui.radio_value(&mut self.mutation_mode, MutationMode::Any, "Any");
+                    ui.radio_value(&mut self.mutation_mode, MutationMode::Finetune, "Finetune");
+                });
+            });
         });
 
         egui::SidePanel::right("parameter editor").show(ctx, |ui| {
@@ -562,18 +581,18 @@ impl eframe::App for EditorApp {
                     self.light_mode = true;
                 }
 
+                if ui.button("Randomize All").clicked() {
+                    for i in 0..VISIBLE_SLOTS {
+                        self.slot[i].dna = Dna::new(self.rnd.next_u64());
+                        self.dna_updated(i);
+                    }
+                }
                 if ui.button("Copy Code").clicked() {
                     let mut clipboard = arboard::Clipboard::new().unwrap();
                     clipboard.set_text(code.clone()).unwrap();
                 }
                 if ui.button("Export PNG").clicked() {
                     self.is_exporting = !self.is_exporting;
-                }
-                if ui.button("Randomize All").clicked() {
-                    for i in 0..VISIBLE_SLOTS {
-                        self.slot[i].dna = Dna::new(self.rnd.next_u64());
-                        self.dna_updated(i);
-                    }
                 }
             });
             ui.code(code);
