@@ -246,12 +246,12 @@ impl Dna {
     pub fn get_u32_in(&mut self, name: &str, minimum: u32, maximum: u32) -> u32 {
         let hash = self.get_parameter_hash(name);
         let value = self.draw_value(hash);
-        let value = value % (maximum - minimum + 1) + minimum;
+        let value = value % (maximum - minimum + 1);
         if self.is_interactive() {
             self.add_parameter(
                 ParameterKind::Categorical,
                 name.into(),
-                format!("{:?}", value),
+                format!("{:?}", value + minimum),
                 self.address.clone(),
                 maximum - minimum,
                 value,
@@ -259,7 +259,7 @@ impl Dna {
                 Vec::new(),
             );
         }
-        value
+        value + minimum
     }
 
     /// Returns an f32 parameter in 0...1.
