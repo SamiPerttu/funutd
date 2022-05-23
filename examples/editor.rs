@@ -324,7 +324,9 @@ impl EditorApp {
             }
             self.slot[mutate_i].dna = match self.mutation_mode {
                 MutationMode::Any => Dna::mutate(&self.slot[source].dna, self.rnd.next_u64(), 0.2),
-                MutationMode::Finetune => Dna::finetune(&self.slot[source].dna, self.rnd.next_u64(), 0.2),
+                MutationMode::Finetune => {
+                    Dna::finetune(&self.slot[source].dna, self.rnd.next_u64(), 0.2)
+                }
             };
             self.slot[mutate_i].texture = self.slot[mutate_i].get_texture();
             if self
