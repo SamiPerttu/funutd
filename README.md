@@ -77,6 +77,13 @@ import the prelude to the paste site (`use funutd::prelude::*;`).
 The tree shaped parameters are shown on the right side of the screen,
 where they can be edited as well.
 
+### Mutation Modes
+
+The mutation mode determines how mutations are made:
+
+- Any: parameters are changed arbitrarily.
+- Finetune: only non-structural parameters are changed.
+
 ![](editor_gui.jpg "explorer GUI")
 
 ---
