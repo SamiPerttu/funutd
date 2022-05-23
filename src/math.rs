@@ -217,63 +217,6 @@ macro_rules! impl_real {
 }
 impl_real! { f32, f64 }
 
-pub trait AsPrimitive<T: Copy>: Copy {
-    /// Convert a value using the as operator.
-    fn as_(self) -> T;
-}
-
-macro_rules! impl_as_primitive {
-    (@ $T: ty => $(#[$cfg:meta])* impl $U: ty ) => {
-        $(#[$cfg])*
-        impl AsPrimitive<$U> for $T {
-            #[inline] fn as_(self) -> $U { self as $U }
-        }
-    };
-    (@ $T: ty => { $( $U: ty ),* } ) => {$(
-        impl_as_primitive!(@ $T => impl $U);
-    )*};
-    ($T: ty => { $( $U: ty ),* } ) => {
-        impl_as_primitive!(@ $T => { $( $U ),* });
-        impl_as_primitive!(@ $T => { u8, u16, u32, u64, u128, usize });
-        impl_as_primitive!(@ $T => { i8, i16, i32, i64, i128, isize });
-    };
-}
-
-impl_as_primitive!(u8 => { char, f32, f64 });
-impl_as_primitive!(i8 => { f32, f64 });
-impl_as_primitive!(u16 => { f32, f64 });
-impl_as_primitive!(i16 => { f32, f64 });
-impl_as_primitive!(u32 => { f32, f64 });
-impl_as_primitive!(i32 => { f32, f64 });
-impl_as_primitive!(u64 => { f32, f64 });
-impl_as_primitive!(i64 => { f32, f64 });
-impl_as_primitive!(u128 => { f32, f64 });
-impl_as_primitive!(i128 => { f32, f64 });
-impl_as_primitive!(usize => { f32, f64 });
-impl_as_primitive!(isize => { f32, f64 });
-impl_as_primitive!(f32 => { f32, f64 });
-impl_as_primitive!(f64 => { f32, f64 });
-impl_as_primitive!(char => { char });
-impl_as_primitive!(bool => {});
-
-/// Cast between primitive types.
-#[inline]
-pub fn cast<T: AsPrimitive<U>, U: Copy>(t: T) -> U {
-    t.as_()
-}
-
-/// Minimum of 3 items.
-#[inline]
-pub fn min3<T: Num>(x: T, y: T, z: T) -> T {
-    x.min(y).min(z)
-}
-
-/// Maximum of 3 items.
-#[inline]
-pub fn max3<T: Num>(x: T, y: T, z: T) -> T {
-    x.max(y).max(z)
-}
-
 /// Clamps x between x0 and x1.
 #[inline]
 pub fn clamp<T: Num>(x0: T, x1: T, x: T) -> T {
@@ -327,12 +270,6 @@ pub fn dexerp<T: Num + Real>(a: T, b: T, x: T) -> T {
     log(x / a) / log(b / a)
 }
 
-/// Rounds to a multiple of step.
-#[inline]
-pub fn discretize<T: Num>(x: T, step: T) -> T {
-    (x / step).round() * step
-}
-
 /// Square of x.
 #[inline]
 pub fn squared<T: Mul<Output = T> + Copy>(x: T) -> T {
@@ -374,12 +311,6 @@ pub fn smooth9<T: Num>(x: T) -> T {
         * x
 }
 
-/// Fade that starts and ends at a slope but levels in the middle.
-#[inline]
-pub fn shelf<T: Num>(x: T) -> T {
-    ((T::new(4) * x - T::new(6)) * x + T::new(3)) * x
-}
-
 /// A quarter circle fade that slopes upwards. Inverse function of Fade.downarc.
 #[inline]
 pub fn uparc<T: Real + Num>(x: T) -> T {
@@ -402,18 +333,6 @@ pub fn wave<T: Num, F: Fn(T) -> T>(f: F, x: T) -> T {
     T::one() - (f(w0) - f(w1)) * T::new(2)
 }
 
-/// Wave function with smooth3 interpolation.
-#[inline]
-pub fn wave3<T: Num>(x: T) -> T {
-    wave(smooth3, x)
-}
-
-/// Wave function with smooth5 interpolation.
-#[inline]
-pub fn wave5<T: Num>(x: T) -> T {
-    wave(smooth5, x)
-}
-
 /// Catmull-Rom cubic spline interpolation, which is a form of cubic Hermite spline. Interpolates between
 /// y1 (returns y1 when x = 0) and y2 (returns y2 when x = 1) while using the previous (y0) and next (y3)
 /// points to define slopes at the endpoints. The maximum overshoot is 1/8th of the range of the arguments.
@@ -432,8 +351,8 @@ pub fn spline_mono<T: Num>(y0: T, y1: T, y2: T, y3: T, x: T) -> T {
     let d0 = y1 - y0;
     let d1 = y2 - y1;
     let d2 = y3 - y2;
-    let d1d = (signum(d0) + signum(d1)) * min3(d0 + d1, abs(d0), abs(d1));
-    let d2d = (signum(d1) + signum(d2)) * min3(d1 + d2, abs(d1), abs(d2));
+    let d1d = (signum(d0) + signum(d1)) * min(d0 + d1, min(abs(d0), abs(d1)));
+    let d2d = (signum(d1) + signum(d2)) * min(d1 + d2, min(abs(d1), abs(d2)));
     cubed(x) * (T::new(2) * y1 - T::new(2) * y2 + d1d + d2d)
         + squared(x) * (T::new(-3) * y1 + T::new(3) * y2 - T::new(2) * d1d - d2d)
         + x * d1d
@@ -483,18 +402,6 @@ pub fn softmix<T: Num>(amount: T, x: T, y: T) -> T {
     let xw = softexp(x * amount);
     let yw = softexp(y * amount);
     (x * xw + y * yw) / (xw + yw + T::from_f32(1.0e-10))
-}
-
-/// Linear congruential generator from Numerical Recipes. Cycles through all u32 values.
-#[inline]
-pub fn lcg32(x: u32) -> u32 {
-    x * 1664525 + 1013904223
-}
-
-/// Linear congruential generator by Donald Knuth. Cycles through all u64 values.
-#[inline]
-pub fn lcg64(x: u64) -> u64 {
-    x * 6364136223846793005 + 1442695040888963407
 }
 
 /// Encodes to binary reflected Gray code.
