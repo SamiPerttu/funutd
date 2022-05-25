@@ -244,7 +244,7 @@ pub fn genmap3(complexity: f32, is_fractal: bool, dna: &mut Dna) -> Box<dyn Text
             ],
         ) {
             0 => {
-                let amount = dna.get_f32_in("amount", 2.0, 7.0);
+                let amount = dna.get_f32_in("amount", 1.0, 3.0);
                 let child_a = dna.call(|dna| genmap3(child_complexity, is_fractal, dna));
                 let child_b = dna.call(|dna| genmap3(child_complexity, is_fractal, dna));
                 rotate(amount, child_a, child_b)
@@ -257,9 +257,10 @@ pub fn genmap3(complexity: f32, is_fractal: bool, dna: &mut Dna) -> Box<dyn Text
             }
             2 => {
                 let width = dna.get_f32_in("width", 1.0, 4.0);
+                let ease = gen_ease(dna, "layer ease");
                 let child_a = dna.call(|dna| genmap3(child_complexity, is_fractal, dna));
                 let child_b = dna.call(|dna| genmap3(child_complexity, is_fractal, dna));
-                layer(width, child_a, child_b)
+                layer(width, ease, child_a, child_b)
             }
             _ => {
                 let amount = dna.get_f32_in("amount", 0.05, 0.25);
@@ -275,10 +276,11 @@ pub fn genmap3(complexity: f32, is_fractal: bool, dna: &mut Dna) -> Box<dyn Text
         let base_f = dna.get_f32_in("base frequency", 1.5, 9.0);
         let roughness = dna.get_f32_xform("roughness", |x| xerp(0.4, 0.9, x));
         let octaves = dna.get_u32_in("octaves", 2, 10) as usize;
+        let first_octave = dna.get_u32_in("first octave", 0, octaves as u32 - 1) as usize;
         let lacunarity = dna.get_f32_xform("lacunarity", |x| xerp(1.5, 3.0, x));
         let displace = dna.call(|dna| {
             if dna.get_choice("displace", [(0.333, "on"), (0.666, "off")]) == 0 {
-                dna.get_f32_in("amount", 0.0, 0.25)
+                dna.get_f32_in("amount", 0.0, 0.5)
             } else {
                 0.0
             }
@@ -294,6 +296,7 @@ pub fn genmap3(complexity: f32, is_fractal: bool, dna: &mut Dna) -> Box<dyn Text
         fractal(
             base_f,
             octaves,
+            first_octave,
             roughness,
             lacunarity,
             displace,

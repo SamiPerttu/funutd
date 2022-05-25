@@ -5,6 +5,7 @@ use super::*;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+use std::io::prelude::*;
 
 /*
 A parameter system for procedural generation.
@@ -138,6 +139,32 @@ impl Dna {
     /// Parameter accessor.
     pub fn parameters(&self) -> &Vec<Parameter> {
         &self.parameters
+    }
+
+    /// Attempts to load Dna from the path.
+    pub fn load(path: &std::path::Path) -> Option<Dna> {
+        let mut dna = Dna::new(Rnd::from_time().next_u64());
+        if let Ok(markup) = std::fs::read_to_string(path) {
+            for x in markup.lines() {
+                if let Some(i) = x.find(' ') {
+                    let key = x[..i].parse();
+                    let value = x[i + 1..].parse();
+                    match (key, value) {
+                        (Ok(key), Ok(value)) => { dna.genome.insert(key, value); },
+                        _ => return None,
+                    }
+                }
+            }
+        }
+        Some(dna)
+    }
+
+    pub fn save(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let mut file = std::fs::File::create(path)?;
+        for (key, value) in self.genome.iter() {
+            file.write_all(format!("{} {}\n", key, value).as_bytes())?;
+        }
+        Ok(())
     }
 
     /// Mutates the source Dna.

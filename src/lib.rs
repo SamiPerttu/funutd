@@ -8,6 +8,7 @@ pub mod ease;
 #[allow(non_snake_case)]
 pub mod hash;
 pub mod lcg;
+#[allow(clippy::too_many_arguments)]
 pub mod map3;
 pub mod map3base;
 pub mod map3gen;

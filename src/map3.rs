@@ -3,6 +3,7 @@
 use super::map3base::*;
 use super::math::*;
 use super::*;
+use super::ease::*;
 
 /// Zero texture.
 pub struct Zero {}
@@ -290,8 +291,8 @@ impl Texture for Softmix3 {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let u = self.texture_a.at(point, frequency);
         let v = self.texture_b.at(point, frequency);
-        let vw: f32 = softexp(v * self.amount).length_squared();
-        let uw: f32 = softexp(u * self.amount).length_squared();
+        let vw: f32 = softexp(v * self.amount).length();
+        let uw: f32 = softexp(u * self.amount).length();
         let epsilon: f32 = 1.0e-9;
         (v * vw + u * uw) / (vw + uw + epsilon)
     }
@@ -329,6 +330,7 @@ pub fn softmix3(
 /// Layers one texture on another with weight depending on distance between texture values.
 pub struct Layer {
     width: f32,
+    ease: Ease,
     texture_a: Box<dyn Texture>,
     texture_b: Box<dyn Texture>,
 }
@@ -340,23 +342,25 @@ impl Texture for Layer {
         let d = u - v;
         let distance = d.length();
         if distance < self.width {
-            u + v * smooth3(1.0 - distance / self.width)
+            u + v * self.ease.at(1.0 - distance / self.width)
         } else {
             u
         }
     }
     fn get_code(&self) -> String {
         format!(
-            "layer({:?}, {}, {})",
+            "layer({:?}, Ease::{:?}, {}, {})",
             self.width,
+            self.ease,
             self.texture_a.get_code(),
             self.texture_b.get_code()
         )
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "layer({:?}, {}, {})",
+            "layer({:?}, Ease::{:?}, {}, {})",
             self.width,
+            self.ease,
             self.texture_a.get_basis_code(),
             self.texture_b.get_basis_code()
         )
@@ -365,12 +369,14 @@ impl Texture for Layer {
 
 pub fn layer(
     width: f32,
+    ease: Ease,
     texture_a: Box<dyn Texture>,
     texture_b: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
     assert!(width > 0.0);
     Box::new(Layer {
         width,
+        ease,
         texture_a,
         texture_b,
     })
@@ -422,6 +428,7 @@ pub fn displace(
 pub struct Fractal {
     base_f: f32,
     octaves: usize,
+    first_octave: usize,
     roughness: f32,
     lacunarity: f32,
     displace: f32,
@@ -431,37 +438,50 @@ pub struct Fractal {
 
 impl Texture for Fractal {
     fn at(&self, point: Vec3a, _frequency: Option<f32>) -> Vec3a {
-        let mut f = self.base_f;
         let mut result = Vec3a::zero();
         let mut p = point;
-        let mut w = 1.0;
         let mut total_w = 0.0;
-        for i in 0..self.octaves {
+        let mut octave = self.first_octave;
+        for _ in 0..self.octaves {
+
+            let f = self.base_f * pow(self.lacunarity, octave as f32);
+            let w = pow(self.roughness, octave as f32);
+
             let v = self.texture.at(p, Some(f));
-            let weight = if i == 0 || self.layer == 0.0 {
+
+            let weight = if octave <= self.first_octave || self.layer == 0.0 {
                 1.0
             } else {
                 let layer_diff = result / total_w - v;
                 let layer_distance = layer_diff.length();
                 if layer_distance < self.layer {
-                    1.0 - smooth3(layer_distance / self.layer)
+                    smooth3(1.0 - layer_distance / self.layer)
                 } else {
                     0.0
                 }
             };
             result += v * w * weight;
             total_w += w * weight;
-            p += v * self.displace * weight / f;
-            w *= self.roughness;
-            f *= self.lacunarity;
+
+            if octave == 0 {
+                octave = self.first_octave + 1;
+                p += v * self.displace * weight / f;
+            } else if octave <= self.first_octave {
+                octave -= 1;
+                p += v * self.displace * weight / f * self.lacunarity;
+            } else {
+                octave += 1;
+                p += v * self.displace * weight / f / self.lacunarity;
+            }
         }
         result / sqrt(total_w)
     }
     fn get_code(&self) -> String {
         format!(
-            "fractal({:?}, {}, {:?}, {:?}, {:?}, {:?}, {})",
+            "fractal({:?}, {}, {}, {:?}, {:?}, {:?}, {:?}, {})",
             self.base_f,
             self.octaves,
+            self.first_octave,
             self.roughness,
             self.lacunarity,
             self.displace,
@@ -477,6 +497,7 @@ impl Texture for Fractal {
 pub fn fractal(
     base_f: f32,
     octaves: usize,
+    first_octave: usize,
     roughness: f32,
     lacunarity: f32,
     displace: f32,
@@ -487,6 +508,7 @@ pub fn fractal(
         texture,
         base_f,
         octaves,
+        first_octave,
         roughness,
         lacunarity,
         displace,

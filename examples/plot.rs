@@ -31,8 +31,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             0.10390177,
             layer(
                 2.4686515,
+                Ease::Smooth3,
                 layer(
                     3.0395193,
+                    Ease::Smooth3,
                     noise(4077839245, 11.842703, tile_all()),
                     vnoise(1246086663, 12.16001, Ease::Smooth5, tile_all()),
                 ),
@@ -48,6 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 fractal(
                     7.6917915,
                     5,
+                    0,
                     0.50210387,
                     2.4051504,
                     0.0,
@@ -109,6 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             fractal(
                 5.8026867,
                 4,
+                0,
                 0.5642442,
                 2.114186,
                 0.07022904,

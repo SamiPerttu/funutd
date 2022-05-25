@@ -343,7 +343,7 @@ impl<H: Hasher> Texture for Camo<H> {
             );
         }
         let d1 = self.ease.at(min(1.0, state.distance_1()));
-        let d = 1.0 - 0.5 * self.gradient * d1;
+        let d = 1.0 - self.gradient * d1;
         vec3a(d * color.x, d * color.y, d * color.z)
     }
 

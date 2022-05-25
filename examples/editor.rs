@@ -596,6 +596,27 @@ impl eframe::App for EditorApp {
                 if ui.button("Export PNG").clicked() {
                     self.is_exporting = !self.is_exporting;
                 }
+                if ui.button("Load").clicked() {
+                    let files = rfd::FileDialog::new()
+                        .add_filter("text", &["txt"])
+                        .set_directory("/")
+                        .pick_file();
+                    if let Some(path) = files {
+                        if let Some(dna) = Dna::load(path.as_path()) {
+                            self.slot[self.focus_slot].dna = dna;
+                            self.dna_updated(self.focus_slot);
+                        }
+                    }
+                }
+                if ui.button("Save").clicked() {
+                    let file = rfd::FileDialog::new()
+                        .add_filter("text", &["txt"])
+                        .set_directory("/")
+                        .save_file();
+                    if let Some(path) = file {
+                        self.slot[self.focus_slot].dna.save(path.as_path());
+                    }
+                }
             });
             ui.code(code);
         });
