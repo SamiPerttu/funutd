@@ -391,8 +391,8 @@ pub fn palette(
             for v in 0..32 {
                 let vf = lerp(value_min, value_max, v as f32 / 31.0);
                 let (r, g, b) = match space {
-                    Space::HSL => okhsl_to_srgb(hue, sf, pow(vf, exp(1.0 - 2.0 * brightness))),
-                    Space::HSV => okhsv_to_srgb(hue, sf, pow(vf, exp(1.0 - 2.0 * brightness))),
+                    Space::HSL => okhsl_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0))),
+                    Space::HSV => okhsv_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0))),
                 };
                 lut[Palette::index_at(h, s, v)] = vec3(r, g, b);
             }
@@ -420,13 +420,16 @@ impl Texture for Palette {
     fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let u = self.texture.at(point, frequency);
         //return vec3a(clamp11(u.x), clamp11(u.y), clamp11(u.z));
-        let h = clamp01(u.x * 0.7 * 0.5 + 0.5);
-        let s = clamp01((u.y).tanh() * 0.5 + 0.5);
+        //let h = clamp01(u.x * 0.7 * 0.5 + 0.5);
+        let h = clamp01(u.x * 0.5 + 0.5);
+        //let s = clamp01((u.y).tanh() * 0.5 + 0.5);
+        let s = clamp01(u.y * 0.5 + 0.5);
         // Here we have modified the value calculation.
         // Problem was darkening when value is near zero,
         // which removes too many degrees of freedom.
         // Solution: let effective value go near zero only when saturation goes near zero.
-        let v = lerp(s * 0.5, 1.0, clamp01((u.z * 0.8).tanh() * 1.2 * 0.5 + 0.5));
+        //let v = lerp(s * 0.5, 1.0, clamp01((u.z * 0.8).tanh() * 1.2 * 0.5 + 0.5));
+        let v = lerp(s * 0.5, 1.0, clamp01(u.z * 0.5 + 0.5));
         // Saturation damping.
         let s = s * lerp(1.0, self.saturation, h);
         let h = h * 30.9999;
