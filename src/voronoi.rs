@@ -12,18 +12,18 @@ pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
     let p = match i / 2 {
         // All of the dot products below are non-negative.
         0 => min(1.0, v.dot(vec3a(1.0, 0.0, 0.0))),
-        1 => min(1.0, v.dot(vec3a(-1.0, 1.0, 0.0))),
-        2 => min(1.0, v.dot(vec3a(0.0, 0.8, 0.0))),
-        3 => min(1.0, v.dot(vec3a(0.4, 0.4, 0.0))),
-        4 => min(1.0, v.dot(vec3a(0.0, 0.0, 0.6))),
+        1 => min(1.0, v.dot(vec3a(-0.5, 1.0, 0.0))),
+        2 => min(1.0, v.dot(vec3a(0.0, 1.0, 0.0))),
+        3 => min(1.0, v.dot(vec3a(0.5, 0.5, 0.0))),
+        4 => min(1.0, v.dot(vec3a(0.0, 0.0, 0.8))),
         5 => min(1.0, v.dot(vec3a(-0.5, 0.5, 0.5))),
         6 => min(1.0, v.dot(vec3a(0.5, -0.5, 0.5))),
-        7 => min(1.0, v.dot(vec3a(0.0, -1.0, 1.0))),
-        8 => min(1.0, v.dot(vec3a(-1.0, 0.0, 1.0))),
-        9 => min(1.0, v.dot(vec3a(-0.5, -0.5, 1.0))),
-        10 => min(1.0, v.dot(vec3a(0.25, 0.25, 0.25))),
+        7 => min(1.0, v.dot(vec3a(0.0, -0.5, 1.0))),
+        8 => min(1.0, v.dot(vec3a(-0.5, 0.0, 1.0))),
+        9 => min(1.0, v.dot(vec3a(-0.3, -0.3, 1.0))),
+        10 => min(1.0, v.dot(vec3a(0.3, 0.3, 0.3))),
         11 => min(1.0, v.dot(vec3a(0.4, 0.0, 0.4))),
-        _ => min(1.0, v.dot(vec3a(0.0, 0.35, 0.35))),
+        _ => min(1.0, v.dot(vec3a(0.0, 0.4, 0.4))),
     };
     if i & 1 == 0 {
         p
