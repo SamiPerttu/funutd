@@ -56,6 +56,30 @@ pub fn gen_ease_smooth(dna: &mut Dna, name: &str) -> Ease {
     }
 }
 
+/// Generate an ease suitable for the Voronoi basis.
+pub fn gen_ease_voronoi(dna: &mut Dna, name: &str) -> Ease {
+    match dna.get_choice(
+        name,
+        [
+            (1.0, "id"),
+            (1.0, "smooth3"),
+            (1.0, "smooth5"),
+            (1.0, "smooth7"),
+            (1.0, "smooth9"),
+            (1.0, "sqrt"),
+            (1.0, "squared"),
+        ],
+    ) {
+        0 => Ease::Id,
+        1 => Ease::Smooth3,
+        2 => Ease::Smooth5,
+        3 => Ease::Smooth7,
+        4 => Ease::Smooth9,
+        5 => Ease::Sqrt,
+        _ => Ease::Squared,
+    }
+}
+
 /// Generate an ease.
 pub fn gen_ease(dna: &mut Dna, name: &str) -> Ease {
     match dna.get_choice(
@@ -149,7 +173,7 @@ pub fn genmap3<H: 'static + Hasher>(complexity: f32, is_fractal: bool, hasher: H
                 let pattern_x = dna.get_u32_in("Voronoi X pattern", 0, 25);
                 let pattern_y = dna.get_u32_in("Voronoi Y pattern", 0, 25);
                 let pattern_z = dna.get_u32_in("Voronoi Z pattern", 0, 25);
-                let ease = gen_ease(dna, "Voronoi ease");
+                let ease = gen_ease_voronoi(dna, "Voronoi ease");
                 let metric = gen_metric(dna, "distance metric");
                 voronoi(
                     seed,
