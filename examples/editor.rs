@@ -1,4 +1,4 @@
-//! Texture editor GUI. WIP.
+//! Texture explorer GUI. WIP.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use eframe::egui;
@@ -480,8 +480,8 @@ impl eframe::App for EditorApp {
                     ui.label("Tiling Mode");
                     let previous_mode = self.tiling_mode;
                     ui.radio_value(&mut self.tiling_mode, TilingMode::All, "All");
-                    ui.radio_value(&mut self.tiling_mode, TilingMode::None, "None");
                     ui.radio_value(&mut self.tiling_mode, TilingMode::XY, "XY");
+                    ui.radio_value(&mut self.tiling_mode, TilingMode::None, "None");
                     if self.tiling_mode != previous_mode {
                         for i in 0 .. VISIBLE_SLOTS {
                             self.dna_updated(i);
