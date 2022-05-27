@@ -145,11 +145,11 @@ impl Dna {
     pub fn load(path: &std::path::Path) -> Option<(String, Dna)> {
         let mut dna = Dna::new(Rnd::from_time().next_u64());
         let mut is_first_line = true;
-        let mut first_line: String = String::new();
+        let mut preamble: String = String::new();
         if let Ok(markup) = std::fs::read_to_string(path) {
             for x in markup.lines() {
                 if is_first_line {
-                    first_line.push_str(x);
+                    preamble.push_str(x);
                     is_first_line = false;
                 } else if let Some(i) = x.find(' ') {
                         let key = x[..i].parse();
@@ -161,12 +161,12 @@ impl Dna {
                 }
             }
         }
-        Some((first_line, dna))
+        Some((preamble, dna))
     }
 
-    pub fn save(&self, path: &std::path::Path, first_line: &str) -> std::io::Result<()> {
+    pub fn save(&self, path: &std::path::Path, preamble: &str) -> std::io::Result<()> {
         let mut file = std::fs::File::create(path)?;
-        file.write_all(first_line.as_bytes())?;
+        file.write_all(preamble.as_bytes())?;
         for (key, value) in self.genome.iter() {
             file.write_all(format!("{} {}\n", key, value).as_bytes())?;
         }

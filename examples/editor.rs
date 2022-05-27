@@ -627,13 +627,27 @@ impl eframe::App for EditorApp {
                         .set_directory("/")
                         .pick_file();
                     if let Some(path) = files {
-                        if let Some((first_line, dna)) = Dna::load(path.as_path()) {
-                            if first_line.contains("All") {
-                                self.tiling_mode = TilingMode::All;
-                            } else if first_line.contains("None") {
-                                self.tiling_mode = TilingMode::None;
-                            } else {
-                                self.tiling_mode = TilingMode::XY;
+                        if let Ok(markup) = std::fs::read_to_string(path.as_path()) {
+                            let mut dna = Dna::new(Rnd::from_time().next_u64());
+                            for x in markup.lines() {
+                                if let Some(i) = x.find(' ') {
+                                    let key = &x[..i];
+                                    let value = &x[i + 1..];
+                                    if key.contains("TilingMode") {
+                                        if value.contains("All") {
+                                            self.tiling_mode = TilingMode::All;
+                                        } else if value.contains("None") {
+                                            self.tiling_mode = TilingMode::None;
+                                        } else {
+                                            self.tiling_mode = TilingMode::XY;
+                                        }
+                                    } else {
+                                        match (key.parse(), value.parse()) {
+                                            (Ok(key), Ok(value)) => { dna.set_value(key, value); },
+                                            _ => continue,
+                                        }
+                                    }
+                                }
                             }
                             self.slot[self.focus_slot].dna = dna;
                             for i in 0 .. VISIBLE_SLOTS {
@@ -648,7 +662,8 @@ impl eframe::App for EditorApp {
                         .set_directory("/")
                         .save_file();
                     if let Some(path) = file {
-                        let _ = self.slot[self.focus_slot].dna.save(path.as_path(), &format!("{:?}\n", self.tiling_mode));
+
+                        let _ = self.slot[self.focus_slot].dna.save(path.as_path(), &format!("TilingMode {:?}\n", self.tiling_mode));
                     }
                 }
             });
