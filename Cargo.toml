@@ -11,7 +11,7 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-glam = "0.20.5"
+glam = "0.21.1"
 
 [dev-dependencies]
 pixels = "0.9.0"
@@ -22,7 +22,7 @@ egui = "0.18.1"
 eframe = "0.18.0"
 rayon = "1.5.3"
 arboard = "2.1.1"
-rfd = "0.8.2"
+rfd = "0.9.1"
 png = "0.17.5"
 
 [[example]]

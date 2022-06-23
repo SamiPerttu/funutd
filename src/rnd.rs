@@ -324,6 +324,11 @@ impl Rnd {
         (self.step() as f32) / ((1u128 << 64) as f32)
     }
 
+    /// Generates true with probability p.
+    pub fn next_bool(&mut self, p: f64) -> bool {
+        self.next_f64() < p
+    }
+
     /// Fills a destination slice with random bytes.
     pub fn fill_bytes(&mut self, dest: &mut [u8]) {
         let bytes = dest.len();
