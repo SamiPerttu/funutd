@@ -1,15 +1,15 @@
 //! Texture unary and binary operators.
 
+use super::ease::*;
 use super::map3base::*;
 use super::math::*;
 use super::*;
-use super::ease::*;
 
 /// Zero texture.
 pub struct Zero {}
 
 impl Texture for Zero {
-    fn at(&self, _point: Vec3a, _frequency: Option<f32>) -> Vec3a {
+    fn at_frequency(&self, _point: Vec3a, _frequency: Option<f32>) -> Vec3a {
         Vec3a::zero()
     }
     fn get_code(&self) -> String {
@@ -34,8 +34,8 @@ pub struct Saturate {
 
 /// Saturates components.
 impl Texture for Saturate {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        softsign(self.texture.at(point, frequency) * self.amount)
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        softsign(self.texture.at_frequency(point, frequency) * self.amount)
     }
     fn get_code(&self) -> String {
         format!("saturate({}, {})", self.amount, self.texture.get_code())
@@ -65,10 +65,10 @@ pub struct Reflect {
 }
 
 impl Texture for Reflect {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         wave(
             smooth3,
-            self.offset + self.texture.at(point, frequency) * self.amount,
+            self.offset + self.texture.at_frequency(point, frequency) * self.amount,
         )
     }
     fn get_code(&self) -> String {
@@ -112,8 +112,8 @@ pub struct Posterize {
 }
 
 impl Texture for Posterize {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let v = self.texture.at(point, frequency);
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let v = self.texture.at_frequency(point, frequency);
         let magnitude = self.levels * v.length();
         if magnitude > 0.0 {
             let base = magnitude.floor();
@@ -164,8 +164,8 @@ pub struct Overdrive {
 }
 
 impl Texture for Overdrive {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let v = self.texture.at(point, frequency);
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let v = self.texture.at_frequency(point, frequency);
         // Use the 4-norm as a smooth proxy for the largest magnitude component.
         let magnitude = squared(v).length_squared();
         if magnitude > 0.0 {
@@ -202,8 +202,8 @@ pub struct VReflect {
 }
 
 impl Texture for VReflect {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let v = self.texture.at(point, frequency);
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let v = self.texture.at_frequency(point, frequency);
         let m = v.length();
         if m > 0.0 {
             v * (sin(m * self.amount * f32::PI * 0.5) / m)
@@ -237,9 +237,9 @@ pub struct Rotate {
 }
 
 impl Texture for Rotate {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let u = self.texture_a.at(point, frequency);
-        let v = self.texture_b.at(point, frequency);
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let u = self.texture_a.at_frequency(point, frequency);
+        let v = self.texture_b.at_frequency(point, frequency);
         let length: f32 = u.length();
         if length > 1.0e-9 {
             let axis = u / length;
@@ -288,9 +288,9 @@ pub struct Softmix3 {
 }
 
 impl Texture for Softmix3 {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let u = self.texture_a.at(point, frequency);
-        let v = self.texture_b.at(point, frequency);
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let u = self.texture_a.at_frequency(point, frequency);
+        let v = self.texture_b.at_frequency(point, frequency);
         let vw: f32 = softexp(v * self.amount).length();
         let uw: f32 = softexp(u * self.amount).length();
         let epsilon: f32 = 1.0e-9;
@@ -336,9 +336,9 @@ pub struct Layer {
 }
 
 impl Texture for Layer {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let u = self.texture_a.at(point, frequency);
-        let v = self.texture_b.at(point, frequency);
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let u = self.texture_a.at_frequency(point, frequency);
+        let v = self.texture_b.at_frequency(point, frequency);
         let d = u - v;
         let distance = d.length();
         if distance < self.width {
@@ -390,9 +390,10 @@ pub struct Displace {
 }
 
 impl Texture for Displace {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let u = self.texture_a.at(point, frequency);
-        self.texture_b.at(point + u * self.amount, frequency)
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let u = self.texture_a.at_frequency(point, frequency);
+        self.texture_b
+            .at_frequency(point + u * self.amount, frequency)
     }
     fn get_code(&self) -> String {
         format!(
@@ -437,17 +438,16 @@ pub struct Fractal {
 }
 
 impl Texture for Fractal {
-    fn at(&self, point: Vec3a, _frequency: Option<f32>) -> Vec3a {
+    fn at_frequency(&self, point: Vec3a, _frequency: Option<f32>) -> Vec3a {
         let mut result = Vec3a::zero();
         let mut p = point;
         let mut total_w = 0.0;
         let mut octave = self.first_octave;
         for _ in 0..self.octaves {
-
             let f = self.base_f * pow(self.lacunarity, octave as f32);
             let w = pow(self.roughness, octave as f32);
 
-            let v = self.texture.at(p, Some(f));
+            let v = self.texture.at_frequency(p, Some(f));
 
             let weight = if octave <= self.first_octave || self.layer == 0.0 {
                 1.0

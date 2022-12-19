@@ -216,7 +216,7 @@ pub struct Voronoi<H: Hasher> {
 }
 
 impl<H: Hasher> Texture for Voronoi<H> {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
         let mut state = VoronoiState::new(
             &self.hasher,
@@ -320,7 +320,7 @@ pub struct Camo<H: Hasher> {
 }
 
 impl<H: Hasher> Texture for Camo<H> {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
         let mut state = VoronoiState::new(
             &self.hasher,

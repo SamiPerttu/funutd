@@ -1,3 +1,4 @@
+//! Easing functions.
 use super::math::*;
 
 #[derive(Debug)]

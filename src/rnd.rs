@@ -236,97 +236,97 @@ impl Rnd {
 
     /// Generates the next 32-bit random number.
     #[inline]
-    pub fn next_u32(&mut self) -> u32 {
+    pub fn u32(&mut self) -> u32 {
         self.step() as u32
     }
 
     /// Generates the next 64-bit random number.
     #[inline]
-    pub fn next_u64(&mut self) -> u64 {
+    pub fn u64(&mut self) -> u64 {
         self.step()
     }
 
     /// Generates the next 32-bit random number.
     #[inline]
-    pub fn next_i32(&mut self) -> i32 {
+    pub fn i32(&mut self) -> i32 {
         self.step() as i32
     }
 
     /// Generates the next 64-bit random number.
     #[inline]
-    pub fn next_i64(&mut self) -> i64 {
+    pub fn i64(&mut self) -> i64 {
         self.step() as i64
     }
 
     /// Generates the next 128-bit random number.
     #[inline]
-    pub fn next_u128(&mut self) -> u128 {
+    pub fn u128(&mut self) -> u128 {
         self.step() as u128 | ((self.step() as u128) << 64)
     }
 
     /// Returns the next u64 in the inclusive range (min, max).
-    pub fn next_u64_in(&mut self, min: u64, max: u64) -> u64 {
+    pub fn u64_in(&mut self, min: u64, max: u64) -> u64 {
         assert!(max >= min);
         let diff = max - min;
         if diff < u64::MAX {
-            self.next_u64() % (diff + 1)
+            self.u64() % (diff + 1)
         } else {
-            self.next_u64()
+            self.u64()
         }
     }
 
     /// Returns the next u32 in the inclusive range (min, max).
-    pub fn next_u32_in(&mut self, min: u32, max: u32) -> u32 {
-        self.next_u64_in(min as u64, max as u64) as u32
+    pub fn u32_in(&mut self, min: u32, max: u32) -> u32 {
+        self.u64_in(min as u64, max as u64) as u32
     }
 
     /// Returns the next i64 in the inclusive range (min, max).
-    pub fn next_i64_in(&mut self, min: i64, max: i64) -> i64 {
-        self.next_u64_in(min as u64, max as u64) as i64
+    pub fn i64_in(&mut self, min: i64, max: i64) -> i64 {
+        self.u64_in(min as u64, max as u64) as i64
     }
 
     /// Returns the next i32 in the inclusive range (min, max).
-    pub fn next_i32_in(&mut self, min: i32, max: i32) -> i32 {
-        self.next_i64_in(min as i64, max as i64) as i32
+    pub fn i32_in(&mut self, min: i32, max: i32) -> i32 {
+        self.i64_in(min as i64, max as i64) as i32
     }
 
     /// Returns the next u64 in the left closed range [0, limit[.
-    pub fn next_u64_to(&mut self, limit: u64) -> u64 {
+    pub fn u64_to(&mut self, limit: u64) -> u64 {
         assert!(limit > 0);
-        self.next_u64_in(0, limit - 1)
+        self.u64_in(0, limit - 1)
     }
 
     /// Returns the next u32 in the left closed range [0, limit[.
-    pub fn next_u32_to(&mut self, limit: u32) -> u32 {
-        self.next_u64_to(limit as u64) as u32
+    pub fn u32_to(&mut self, limit: u32) -> u32 {
+        self.u64_to(limit as u64) as u32
     }
 
     /// Returns the next i64 in the left closed range [0, limit[.
-    pub fn next_i64_to(&mut self, limit: i64) -> i64 {
+    pub fn i64_to(&mut self, limit: i64) -> i64 {
         assert!(limit > 0);
-        self.next_i64_in(0, limit - 1)
+        self.i64_in(0, limit - 1)
     }
 
     /// Returns the next i32 in the left closed range [0, limit[.
-    pub fn next_i32_to(&mut self, limit: i32) -> i32 {
-        self.next_i64_to(limit as i64) as i32
+    pub fn i32_to(&mut self, limit: i32) -> i32 {
+        self.i64_to(limit as i64) as i32
     }
 
     /// Generates the next double precision random number in [0, 1[.
     #[inline]
-    pub fn next_f64(&mut self) -> f64 {
+    pub fn f64(&mut self) -> f64 {
         (self.step() as f64) / ((1u128 << 64) as f64)
     }
 
     /// Generates the next single precision random number in [0, 1[.
     #[inline]
-    pub fn next_f32(&mut self) -> f32 {
+    pub fn f32(&mut self) -> f32 {
         (self.step() as f32) / ((1u128 << 64) as f32)
     }
 
     /// Generates true with probability p.
-    pub fn next_bool(&mut self, p: f64) -> bool {
-        self.next_f64() < p
+    pub fn bool(&mut self, p: f64) -> bool {
+        self.f64() < p
     }
 
     /// Fills a destination slice with random bytes.
@@ -369,7 +369,7 @@ mod tests {
         ];
         let mut krull64 = Rnd::from_u64(0);
         for x in krull64_expected {
-            assert_eq!(x, krull64.next_u64());
+            assert_eq!(x, krull64.u64());
         }
 
         let mut r: u128 = 0;
@@ -398,7 +398,7 @@ mod tests {
             assert_eq!(pos2, krull2.position());
             krull1.jump((pos2 - pos1) as i128);
             assert_eq!(pos2, krull1.position());
-            assert_eq!(krull1.next_u64(), krull2.next_u64());
+            assert_eq!(krull1.u64(), krull2.u64());
             krull1.jump(-1);
             assert_eq!(pos2, krull1.position());
             krull2.jump(-1);
@@ -408,7 +408,7 @@ mod tests {
 
             let n = 1 + (rnd() & 0x3ff);
             for _ in 0..n {
-                krull1.next_u64();
+                krull1.u64();
             }
             assert_eq!(pos1 + n, krull1.position());
 
@@ -422,7 +422,7 @@ mod tests {
             krull1.fill_bytes(&mut buffer1[0..bytes as usize]);
             krull2.reset();
             for i in 0..0x10 {
-                let x = krull2.next_u64();
+                let x = krull2.u64();
                 buffer2[(i << 3)..((i + 1) << 3)].copy_from_slice(&x.to_le_bytes());
             }
             assert!(buffer1[0..bytes as usize]

@@ -1,3 +1,5 @@
+//! FunUTD is a 3-D procedural texture library.
+
 #[allow(non_snake_case)]
 #[allow(clippy::excessive_precision)]
 pub mod color;

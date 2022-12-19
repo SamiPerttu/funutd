@@ -1,3 +1,5 @@
+//! Draw texture in a window.
+
 use pixels::{Error, Pixels, SurfaceTexture};
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
@@ -20,7 +22,7 @@ fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = LogicalSize::new(512.0, 512.0);
+        let size = LogicalSize::new(128.0, 128.0);
         WindowBuilder::new()
             .with_title("Texture Example")
             .with_inner_size(size)
@@ -40,7 +42,7 @@ fn main() -> Result<(), Error> {
     event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            world.draw(pixels.get_frame());
+            world.draw(pixels.get_frame_mut());
             if pixels.render().is_err() {
                 *control_flow = ControlFlow::Exit;
                 return;
@@ -57,7 +59,7 @@ fn main() -> Result<(), Error> {
 
             // Resize the window
             if let Some(size) = input.window_resized() {
-                pixels.resize_surface(size.width, size.height);
+                pixels.resize_surface(size.width, size.height).unwrap();
             }
 
             // Update internal state and request a redraw
@@ -110,7 +112,7 @@ impl World {
             let fx: f32 = x as f32 / self.width as f32;
             let fy: f32 = y as f32 / self.height as f32;
 
-            let value = texture.at(vec3a(fx, fy, self.z), None);
+            let value = texture.at_frequency(vec3a(fx, fy, self.z), None);
 
             let rgba = [
                 (clamp01(value.x * 0.5 + 0.5) * 255.0) as u8,

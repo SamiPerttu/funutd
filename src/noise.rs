@@ -38,7 +38,7 @@ pub fn vnoise_basis<H: 'static + Hasher>(seed: u64, ease: Ease, hasher: H) -> Bo
 }
 
 impl<H: Hasher> Texture for VNoise<H> {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
         let basis = self.hasher.query(self.seed, frequency, point);
         let mut result = Vec3a::zero();
@@ -125,7 +125,7 @@ pub fn noise_basis<H: 'static + Hasher>(seed: u64, hasher: H) -> Box<dyn Texture
 }
 
 impl<H: Hasher> Texture for Noise<H> {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let frequency = frequency.unwrap_or(self.frequency);
         let basis = self.hasher.query(self.seed, frequency, point);
         let mut result = Vec3a::zero();

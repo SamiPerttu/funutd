@@ -1,5 +1,7 @@
 //! Texture explorer GUI. WIP.
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
+// hide console window on Windows in release mode.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use eframe::egui;
 use funutd::prelude::*;
@@ -13,7 +15,7 @@ use std::thread;
 enum TilingMode {
     None,
     XY,
-    All
+    All,
 }
 
 /// Convert texture value to u8. Canonical texture range is -1...1.
@@ -152,7 +154,7 @@ impl RenderSlot {
                     if is_progressive && x & 1 == 0 {
                         continue;
                     }
-                    let v = self.texture.at(row.point(x).into(), None);
+                    let v = self.texture.at(row.point(x).into());
                     row.data[x] =
                         egui::Color32::from_rgb(convert_u8(v.x), convert_u8(v.y), convert_u8(v.z));
                 }
@@ -305,7 +307,7 @@ impl EditorApp {
             rx_image,
         };
         for i in 0..SLOTS {
-            let dna = Dna::new(app.rnd.next_u64());
+            let dna = Dna::new(app.rnd.u64());
             let mut slot = ImageSlot {
                 image: None,
                 dna,
@@ -336,9 +338,9 @@ impl EditorApp {
                 continue;
             }
             self.slot[mutate_i].dna = match self.mutation_mode {
-                MutationMode::Any => Dna::mutate(&self.slot[source].dna, self.rnd.next_u64(), 0.2),
+                MutationMode::Any => Dna::mutate(&self.slot[source].dna, self.rnd.u64(), 0.2),
                 MutationMode::Finetune => {
-                    Dna::finetune(&self.slot[source].dna, self.rnd.next_u64(), 0.2)
+                    Dna::finetune(&self.slot[source].dna, self.rnd.u64(), 0.2)
                 }
             };
             self.slot[mutate_i].texture = self.slot[mutate_i].get_texture(self.tiling_mode);
@@ -373,7 +375,7 @@ impl EditorApp {
 }
 
 impl eframe::App for EditorApp {
-    fn on_exit_event(&mut self) -> bool {
+    fn on_close_event(&mut self) -> bool {
         self.is_exiting = true;
         self.can_exit
     }
@@ -412,7 +414,8 @@ impl eframe::App for EditorApp {
                     }
                 }
             } else if let Some(image) = message.image {
-                self.slot[message.slot].image = Some(ctx.load_texture("", image));
+                self.slot[message.slot].image =
+                    Some(ctx.load_texture("", image, Default::default()));
             }
         }
 
@@ -483,7 +486,7 @@ impl eframe::App for EditorApp {
                     ui.radio_value(&mut self.tiling_mode, TilingMode::XY, "XY");
                     ui.radio_value(&mut self.tiling_mode, TilingMode::None, "None");
                     if self.tiling_mode != previous_mode {
-                        for i in 0 .. VISIBLE_SLOTS {
+                        for i in 0..VISIBLE_SLOTS {
                             self.dna_updated(i);
                         }
                     }
@@ -548,7 +551,7 @@ impl eframe::App for EditorApp {
                                         if ui.add(egui::Button::new("Randomize")).clicked() {
                                             self.slot[self.focus_slot]
                                                 .dna
-                                                .set_value(parameter.hash(), self.rnd.next_u32());
+                                                .set_value(parameter.hash(), self.rnd.u32());
                                             self.dna_updated(self.focus_slot);
                                         }
                                         if ui.add(egui::Button::new("-")).clicked() {
@@ -610,7 +613,7 @@ impl eframe::App for EditorApp {
 
                 if ui.button("Randomize All").clicked() {
                     for i in 0..VISIBLE_SLOTS {
-                        self.slot[i].dna = Dna::new(self.rnd.next_u64());
+                        self.slot[i].dna = Dna::new(self.rnd.u64());
                         self.dna_updated(i);
                     }
                 }
@@ -628,7 +631,7 @@ impl eframe::App for EditorApp {
                         .pick_file();
                     if let Some(path) = files {
                         if let Ok(markup) = std::fs::read_to_string(path.as_path()) {
-                            let mut dna = Dna::new(Rnd::from_time().next_u64());
+                            let mut dna = Dna::new(Rnd::from_time().u64());
                             for x in markup.lines() {
                                 if let Some(i) = x.find(' ') {
                                     let key = &x[..i];
@@ -643,14 +646,16 @@ impl eframe::App for EditorApp {
                                         }
                                     } else {
                                         match (key.parse(), value.parse()) {
-                                            (Ok(key), Ok(value)) => { dna.set_value(key, value); },
+                                            (Ok(key), Ok(value)) => {
+                                                dna.set_value(key, value);
+                                            }
                                             _ => continue,
                                         }
                                     }
                                 }
                             }
                             self.slot[self.focus_slot].dna = dna;
-                            for i in 0 .. VISIBLE_SLOTS {
+                            for i in 0..VISIBLE_SLOTS {
                                 self.dna_updated(i);
                             }
                         }
@@ -662,8 +667,10 @@ impl eframe::App for EditorApp {
                         .set_directory("/")
                         .save_file();
                     if let Some(path) = file {
-
-                        let _ = self.slot[self.focus_slot].dna.save(path.as_path(), &format!("TilingMode {:?}\n", self.tiling_mode));
+                        let _ = self.slot[self.focus_slot].dna.save(
+                            path.as_path(),
+                            &format!("TilingMode {:?}\n", self.tiling_mode),
+                        );
                     }
                 }
             });
@@ -682,7 +689,7 @@ impl eframe::App for EditorApp {
 
                         if ui.button("Yes").clicked() {
                             self.can_exit = true;
-                            frame.quit();
+                            frame.close();
                         }
                     });
                 });
@@ -726,7 +733,8 @@ impl eframe::App for EditorApp {
                             self.export_in_progress = true;
                             self.export_rows = 0;
                             self.slot[EXPORT_SLOT].dna = self.slot[self.focus_slot].dna.clone();
-                            self.slot[EXPORT_SLOT].texture = self.slot[EXPORT_SLOT].get_texture(self.tiling_mode);
+                            self.slot[EXPORT_SLOT].texture =
+                                self.slot[EXPORT_SLOT].get_texture(self.tiling_mode);
                             self.slot[EXPORT_SLOT].image = None;
 
                             if self

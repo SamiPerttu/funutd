@@ -391,8 +391,12 @@ pub fn palette(
             for v in 0..32 {
                 let vf = lerp(value_min, value_max, v as f32 / 31.0);
                 let (r, g, b) = match space {
-                    Space::HSL => okhsl_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0))),
-                    Space::HSV => okhsv_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0))),
+                    Space::HSL => {
+                        okhsl_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0)))
+                    }
+                    Space::HSV => {
+                        okhsv_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0)))
+                    }
                 };
                 lut[Palette::index_at(h, s, v)] = vec3(r, g, b);
             }
@@ -417,8 +421,8 @@ impl Palette {
 }
 
 impl Texture for Palette {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
-        let u = self.texture.at(point, frequency);
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let u = self.texture.at_frequency(point, frequency);
         //return vec3a(clamp11(u.x), clamp11(u.y), clamp11(u.z));
         let h = clamp01(u.x * 0.7 * 0.5 + 0.5);
         //let h = clamp01(u.x * 0.5 + 0.5);

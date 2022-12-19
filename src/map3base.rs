@@ -247,7 +247,10 @@ impl Hasher for TileXY {
 
 /// Textures are self-maps in 3-space.
 pub trait Texture: Sync + Send {
-    fn at(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a;
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a;
+    fn at(&self, point: Vec3a) -> Vec3a {
+        self.at_frequency(point, None)
+    }
     fn get_code(&self) -> String;
     fn get_basis_code(&self) -> String;
 }
