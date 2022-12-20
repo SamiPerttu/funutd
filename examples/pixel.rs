@@ -22,7 +22,7 @@ fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = LogicalSize::new(128.0, 128.0);
+        let size = LogicalSize::new(256.0, 256.0);
         WindowBuilder::new()
             .with_title("Texture Example")
             .with_inner_size(size)
@@ -82,24 +82,17 @@ impl World {
 
     /// Update the `World` internal state.
     fn update(&mut self) {
-        self.phase = (self.phase + 1.0 / 32.0) % 1.0;
-        self.z += 1.0 / 32.0;
+        self.phase = (self.phase + 1.0 / 128.0) % 1.0;
+        self.z += 1.0 / 128.0;
     }
 
     /// Draw the `World` state to the frame buffer.
     ///
     /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
     fn draw(&self, frame: &mut [u8]) {
-        let mut dna = Dna::new(self.z as u64);
-        let texture = genmap3palette(20.0, tile_all(), &mut dna);
-
-        if self.phase > 0.0 && self.phase < 1.0 / 24.0 {
-            println!("{}", texture.get_code());
-        }
-
         //let texture = palette(Space::HSV, 0.0, 1.0, 0.0, 0.0, fractal(2.0, 8, 0.5, 2.0, 0.0, 0.0, noise_basis(1, tile_none())));
         //let texture = palette(Space::HSV, 0.0, 1.0, 0.0, 1.0, fractal(2.0, 8, 0.5, 2.0, 0.0, 0.0, vnoise_basis(1, tile_none())));
-        //let texture = palette(Space::HSV, 0.0, 0.2, 0.0, 1.0, noise(1, 32.0, tile_none()));
+        let texture = palette(Space::HSV, 0.0, 0.2, 0.0, 1.0, noise(1, 8.0, tile_none()));
         //let texture = palette(Space::HSV, 0.192, 0.418, 0.015, 0.403, fractal(4.660271, 4, 0.76092863, 2.532766, 0.11465196, 0.0, voronoi_basis(3581209750, tile_all(), 12, 0, 6)));
         //let texture = palette(Space::HSL, 0.739, 0.448, 0.281, 0.665, displace(0.18501252, voronoi(278220278, 17.42609, tile_all(), 0, 7, 10), voronoi(3737477767, 4.2395425, tile_all(), 2, 1, 0)));
         //let texture = palette(Space::HSL, 0.406, 0.814, 0.483, 0.329, fractal(3.4102457, 7, 0.4548667, 2.789417, 0.0, 0.0, vnoise_basis(2316030952, tile_all())));

@@ -111,7 +111,16 @@ pub fn gen_ease(dna: &mut Dna, name: &str) -> Ease {
 }
 
 /// Generate a texture with a palette.
-pub fn genmap3palette<H: 'static + Hasher>(
+pub fn genmap3palette(complexity: f32, tiling: TilingMode, dna: &mut Dna) -> Box<dyn Texture> {
+    match tiling {
+        TilingMode::All => genmap3palette_hasher(complexity, tile_all(), dna),
+        TilingMode::None => genmap3palette_hasher(complexity, tile_none(), dna),
+        TilingMode::XY => genmap3palette_hasher(complexity, tile_xy(), dna),
+    }
+}
+
+/// Generate a texture with a palette.
+pub fn genmap3palette_hasher<H: 'static + Hasher>(
     complexity: f32,
     hasher: H,
     dna: &mut Dna,
@@ -124,12 +133,21 @@ pub fn genmap3palette<H: 'static + Hasher>(
     let hue_min = dna.f32_in("hue minimum", 0.0, 1.0);
     let hue_amount = dna.f32_xform("hue width", |x| xerp(0.2, 1.0, x));
     let saturation = dna.f32_in("saturation", 0.0, 1.0);
-    let map = genmap3(complexity, false, hasher, dna);
+    let map = genmap3_hasher(complexity, false, hasher, dna);
     palette(space, brightness, hue_min, hue_amount, saturation, map)
 }
 
 /// Generate a texture.
-pub fn genmap3<H: 'static + Hasher>(
+pub fn genmap3(complexity: f32, tiling: TilingMode, dna: &mut Dna) -> Box<dyn Texture> {
+    match tiling {
+        TilingMode::All => genmap3_hasher(complexity, false, tile_all(), dna),
+        TilingMode::None => genmap3_hasher(complexity, false, tile_none(), dna),
+        TilingMode::XY => genmap3_hasher(complexity, false, tile_xy(), dna),
+    }
+}
+
+/// Generate a texture.
+pub fn genmap3_hasher<H: 'static + Hasher>(
     complexity: f32,
     is_fractal: bool,
     hasher: H,
@@ -235,27 +253,27 @@ pub fn genmap3<H: 'static + Hasher>(
         ) {
             0 => {
                 let amount = dna.f32_in("amount", 2.0, 10.0);
-                let child =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 saturate(amount, child)
             }
             1 => {
                 let levels = dna.f32_in("levels", 2.0, 10.0);
                 let sharpness: f32 = dna.f32("sharpness");
-                let child =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 posterize(levels, sharpness, child)
             }
             2 => {
                 let amount = dna.f32_in("amount", 2.0, 10.0);
-                let child =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 overdrive(amount, child)
             }
             3 => {
                 let amount = dna.f32_in("amount", 2.0, 10.0);
-                let child =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 vreflect(amount, child)
             }
             _ => {
@@ -263,8 +281,8 @@ pub fn genmap3<H: 'static + Hasher>(
                 let x_offset = dna.f32_in("X offset", -1.0, 1.0);
                 let y_offset = dna.f32_in("Y offset", -1.0, 1.0);
                 let z_offset = dna.f32_in("Z offset", -1.0, 1.0);
-                let child =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 reflect(amount, vec3(x_offset, y_offset, z_offset), child)
             }
         };
@@ -283,35 +301,35 @@ pub fn genmap3<H: 'static + Hasher>(
         ) {
             0 => {
                 let amount = dna.f32_in("amount", 1.0, 3.0);
-                let child_a =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
-                let child_b =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_a = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_b = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 rotate(amount, child_a, child_b)
             }
             1 => {
                 let amount = dna.f32_in("amount", 1.0, 10.0);
-                let child_a =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
-                let child_b =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_a = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_b = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 softmix3(amount, child_a, child_b)
             }
             2 => {
                 let width = dna.f32_in("width", 1.0, 4.0);
                 let ease = gen_ease(dna, "layer ease");
-                let child_a =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
-                let child_b =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_a = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_b = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 layer(width, ease, child_a, child_b)
             }
             _ => {
                 let amount = dna.f32_in("amount", 0.05, 0.25);
-                let child_a =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
-                let child_b =
-                    dna.call(|dna| genmap3(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_a = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
+                let child_b = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 displace(amount, child_a, child_b)
             }
         };
@@ -338,7 +356,8 @@ pub fn genmap3<H: 'static + Hasher>(
                 0.0
             }
         });
-        let child_basis = dna.call(|dna| genmap3(child_complexity, true, hasher.clone(), dna));
+        let child_basis =
+            dna.call(|dna| genmap3_hasher(child_complexity, true, hasher.clone(), dna));
         fractal(
             base_f,
             octaves,

@@ -11,13 +11,6 @@ use std::io::BufWriter;
 use std::sync::mpsc;
 use std::thread;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-enum TilingMode {
-    None,
-    XY,
-    All,
-}
-
 /// Convert texture value to u8. Canonical texture range is -1...1.
 pub fn convert_u8(x: f32) -> u8 {
     ((x * 0.5 + 0.5).min(1.0).max(0.0) * 255.99999).floor() as u8
@@ -173,11 +166,7 @@ struct ImageSlot {
 impl ImageSlot {
     pub fn get_texture(&mut self, tiling_mode: TilingMode) -> Box<dyn Texture> {
         self.dna.reset();
-        match tiling_mode {
-            TilingMode::All => genmap3palette(100.0, tile_all(), &mut self.dna),
-            TilingMode::None => genmap3palette(100.0, tile_none(), &mut self.dna),
-            TilingMode::XY => genmap3palette(100.0, tile_xy(), &mut self.dna),
-        }
+        genmap3palette(100.0, tiling_mode, &mut self.dna)
     }
 }
 

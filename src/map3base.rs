@@ -75,7 +75,7 @@ pub fn hash_unit(mut seed: u64) -> Vec3a {
         if length2 <= 1.0 {
             return if length2 > 0.0 { v / sqrt(length2) } else { v };
         }
-        seed = hash64d(seed);
+        seed = seed.wrapping_add(1);
     }
 }
 
@@ -104,15 +104,15 @@ impl Hasher for TileNone {
     }
     fn hash_x(&self, basis: &Basis, current: u64, dx: i32) -> u64 {
         let x = basis.ix.wrapping_add(dx as u32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
+        hash64f(current ^ x as u64 ^ basis.seed as u64)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = basis.iy.wrapping_add(dy as u32);
-        hash64b(current ^ y as u64)
+        hash64a(current ^ y as u64)
     }
     fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
         let z = basis.iz.wrapping_add(dz as u32);
-        hash64c(current ^ z as u64)
+        hash64b(current ^ z as u64)
     }
     fn get_code(&self) -> String {
         String::from("tile_none()")
@@ -163,7 +163,7 @@ impl Hasher for TileAll {
         let x = (basis.ix as i32)
             .wrapping_add(dx)
             .rem_euclid(basis.sx as i32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
+        hash64f(current ^ x as u64 ^ basis.seed as u64)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = (basis.iy as i32)
@@ -175,7 +175,7 @@ impl Hasher for TileAll {
         let z = (basis.iz as i32)
             .wrapping_add(dz)
             .rem_euclid(basis.sz as i32);
-        hash64a(current ^ z as u64)
+        hash64b(current ^ z as u64)
     }
     fn get_code(&self) -> String {
         if self.sx == 1 && self.sy == 1 && self.sz == 1 {
@@ -224,7 +224,7 @@ impl Hasher for TileXY {
         let x = (basis.ix as i32)
             .wrapping_add(dx)
             .rem_euclid(basis.sx as i32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
+        hash64f(current ^ x as u64 ^ basis.seed as u64)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = (basis.iy as i32)
@@ -234,7 +234,7 @@ impl Hasher for TileXY {
     }
     fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
         let z = basis.iz.wrapping_add(dz as u32);
-        hash64c(current ^ z as u64)
+        hash64b(current ^ z as u64)
     }
     fn get_code(&self) -> String {
         if self.sx == 1 && self.sy == 1 {
@@ -247,10 +247,25 @@ impl Hasher for TileXY {
 
 /// Textures are self-maps in 3-space.
 pub trait Texture: Sync + Send {
+    /// Evaluate texture at `point` using `frequency` for basis frequencies.
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a;
+
+    /// Evaluate texture at `point`.
     fn at(&self, point: Vec3a) -> Vec3a {
         self.at_frequency(point, None)
     }
+
+    /// Get code for instantiating this texture.
     fn get_code(&self) -> String;
+
+    /// Get code for instantiating this texture without specifying basis frequencies.
     fn get_basis_code(&self) -> String;
+}
+
+/// Tiling modes.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum TilingMode {
+    None,
+    XY,
+    All,
 }

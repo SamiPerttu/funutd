@@ -112,6 +112,21 @@ pub fn hash64e(x: u64) -> u64 {
     x ^ (x >> 31)
 }
 
+/// Fast 64-bit hash from FXHasher.
+#[inline]
+pub fn hash64f(x: u64) -> u64 {
+    (x.rotate_left(5) ^ x).wrapping_mul(0x517cc1b727220a95)
+}
+
+/// 64-bit hash from Krull64 RNG output stage.
+/// Extra high quality - can be used as an indexed RNG.
+pub fn hash64g(x: u64) -> u64 {
+    let x = (x ^ (x >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+    let x = (x ^ (x >> 27)).wrapping_mul(0x94d049bb133111eb);
+    let x = (x ^ (x >> 31)).wrapping_mul(0xd6e8feb86659fd93);
+    x ^ (x >> 32)
+}
+
 /// 128-to-64-bit hash from CityHash by Geoff Pike and Jyrki Alakuijala.
 #[inline]
 pub fn hash128a(x: u128) -> u64 {
