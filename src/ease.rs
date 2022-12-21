@@ -1,7 +1,7 @@
 //! Easing functions.
 use super::math::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Ease {
     Id,
     Smooth3,

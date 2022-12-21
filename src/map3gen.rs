@@ -12,110 +12,76 @@ use super::voronoi::*;
 use super::*;
 
 pub fn gen_metric(dna: &mut Dna, name: &str) -> Distance {
-    match dna.choice(
+    dna.choice(
         name,
         [
-            (1.0, "1-norm"),
-            (4.0, "2-norm"),
-            (1.0, "4-norm"),
-            (1.0, "8-norm"),
-            (1.0, "max norm"),
+            (1.0, "1-norm", Distance::Norm1),
+            (4.0, "2-norm", Distance::Norm2),
+            (1.0, "4-norm", Distance::Norm4),
+            (1.0, "8-norm", Distance::Norm8),
+            (1.0, "max norm", Distance::NormMax),
         ],
-    ) {
-        0 => Distance::Norm1,
-        1 => Distance::Norm2,
-        2 => Distance::Norm4,
-        3 => Distance::Norm8,
-        _ => Distance::NormMax,
-    }
+    )
 }
 
 /// Generate an ease that is smooth near zero.
 pub fn gen_ease_smooth(dna: &mut Dna, name: &str) -> Ease {
-    match dna.choice(
+    dna.choice(
         name,
         [
-            (1.0, "id"),
-            (1.0, "smooth3"),
-            (2.0, "smooth5"),
-            (1.0, "smooth7"),
-            (1.0, "smooth9"),
-            (1.0, "squared"),
-            (1.0, "cubed"),
-            (1.0, "up arc"),
+            (1.0, "smooth3", Ease::Smooth3),
+            (2.0, "smooth5", Ease::Smooth5),
+            (1.0, "smooth7", Ease::Smooth7),
+            (1.0, "smooth9", Ease::Smooth9),
+            (1.0, "squared", Ease::Squared),
+            (1.0, "cubed", Ease::Cubed),
+            (1.0, "up arc", Ease::UpArc),
         ],
-    ) {
-        0 => Ease::Id,
-        1 => Ease::Smooth3,
-        2 => Ease::Smooth5,
-        3 => Ease::Smooth7,
-        4 => Ease::Smooth9,
-        5 => Ease::Squared,
-        6 => Ease::Cubed,
-        _ => Ease::UpArc,
-    }
+    )
 }
 
 /// Generate an ease suitable for the Voronoi basis.
 pub fn gen_ease_voronoi(dna: &mut Dna, name: &str) -> Ease {
-    match dna.choice(
+    dna.choice(
         name,
         [
-            (1.0, "id"),
-            (1.0, "smooth3"),
-            (1.0, "smooth5"),
-            (1.0, "smooth7"),
-            (1.0, "smooth9"),
-            (1.0, "sqrt"),
-            (1.0, "squared"),
+            (1.0, "id", Ease::Id),
+            (1.0, "smooth3", Ease::Smooth3),
+            (1.0, "smooth5", Ease::Smooth5),
+            (1.0, "smooth7", Ease::Smooth7),
+            (1.0, "smooth9", Ease::Smooth9),
+            (1.0, "sqrt", Ease::Sqrt),
+            (1.0, "squared", Ease::Squared),
         ],
-    ) {
-        0 => Ease::Id,
-        1 => Ease::Smooth3,
-        2 => Ease::Smooth5,
-        3 => Ease::Smooth7,
-        4 => Ease::Smooth9,
-        5 => Ease::Sqrt,
-        _ => Ease::Squared,
-    }
+    )
 }
 
 /// Generate an ease.
 pub fn gen_ease(dna: &mut Dna, name: &str) -> Ease {
-    match dna.choice(
+    dna.choice(
         name,
         [
-            (1.0, "id"),
-            (1.0, "smooth3"),
-            (2.0, "smooth5"),
-            (1.0, "smooth7"),
-            (1.0, "smooth9"),
-            (1.0, "sqrt"),
-            (1.0, "squared"),
-            (1.0, "cubed"),
-            (1.0, "down arc"),
-            (1.0, "up arc"),
+            (1.0, "id", Ease::Id),
+            (1.0, "smooth3", Ease::Smooth3),
+            (1.0, "smooth5", Ease::Smooth5),
+            (1.0, "smooth7", Ease::Smooth7),
+            (1.0, "smooth9", Ease::Smooth9),
+            (1.0, "sqrt", Ease::Sqrt),
+            (1.0, "squared", Ease::Squared),
+            (1.0, "cubed", Ease::Cubed),
+            (1.0, "down arc", Ease::DownArc),
+            (1.0, "up arc", Ease::UpArc),
         ],
-    ) {
-        0 => Ease::Id,
-        1 => Ease::Smooth3,
-        2 => Ease::Smooth5,
-        3 => Ease::Smooth7,
-        4 => Ease::Smooth9,
-        5 => Ease::Sqrt,
-        6 => Ease::Squared,
-        7 => Ease::Cubed,
-        8 => Ease::DownArc,
-        _ => Ease::UpArc,
-    }
+    )
 }
 
 /// Generate a texture with a palette.
 pub fn genmap3palette(complexity: f32, tiling: TilingMode, dna: &mut Dna) -> Box<dyn Texture> {
     match tiling {
-        TilingMode::All => genmap3palette_hasher(complexity, tile_all(), dna),
         TilingMode::None => genmap3palette_hasher(complexity, tile_none(), dna),
+        TilingMode::Z => genmap3palette_hasher(complexity, tile_z(), dna),
         TilingMode::XY => genmap3palette_hasher(complexity, tile_xy(), dna),
+        TilingMode::All => genmap3palette_hasher(complexity, tile_all(), dna),
     }
 }
 
@@ -125,7 +91,7 @@ pub fn genmap3palette_hasher<H: 'static + Hasher>(
     hasher: H,
     dna: &mut Dna,
 ) -> Box<dyn Texture> {
-    let space = match dna.choice("color space", [(1.0, "Okhsl"), (1.0, "Okhsv")]) {
+    let space = match dna.index("color space", [(1.0, "Okhsl"), (1.0, "Okhsv")]) {
         0 => Space::HSL,
         _ => Space::HSV,
     };
@@ -140,9 +106,10 @@ pub fn genmap3palette_hasher<H: 'static + Hasher>(
 /// Generate a texture.
 pub fn genmap3(complexity: f32, tiling: TilingMode, dna: &mut Dna) -> Box<dyn Texture> {
     match tiling {
-        TilingMode::All => genmap3_hasher(complexity, false, tile_all(), dna),
         TilingMode::None => genmap3_hasher(complexity, false, tile_none(), dna),
+        TilingMode::Z => genmap3_hasher(complexity, false, tile_z(), dna),
         TilingMode::XY => genmap3_hasher(complexity, false, tile_xy(), dna),
+        TilingMode::All => genmap3_hasher(complexity, false, tile_all(), dna),
     }
 }
 
@@ -164,7 +131,7 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
         0.01
     };
 
-    let choice = dna.choice(
+    let choice = dna.index(
         "node type",
         [
             (basis_weight, "basis"),
@@ -182,7 +149,7 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
         } else {
             dna.f32_xform("frequency", |x| xerp(4.0, 32.0, x))
         };
-        let texture: Box<dyn Texture> = match dna.choice(
+        let texture: Box<dyn Texture> = match dna.index(
             "basis",
             [
                 (1.0, "gradient noise"),
@@ -215,7 +182,7 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
             }
             _ => {
                 let border = dna.call(|dna| {
-                    if dna.choice("border", [(0.5, "on"), (0.5, "off")]) == 0 {
+                    if dna.index("border", [(0.5, "on"), (0.5, "off")]) == 0 {
                         dna.f32_in("border width", 0.01, 0.10)
                     } else {
                         0.0
@@ -241,7 +208,7 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
     } else if choice == 1 {
         // Shape a map with a unary operator.
         let child_complexity = complexity * 0.5 - 1.0;
-        let unary_node = match dna.choice(
+        let unary_node = match dna.index(
             "unary node",
             [
                 (1.0, "saturate"),
@@ -252,10 +219,10 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
             ],
         ) {
             0 => {
-                let amount = dna.f32_in("amount", 2.0, 10.0);
+                let amount = dna.f32_in("amount", 1.0, 5.0);
                 let child = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
-                saturate(amount, child)
+                saturate(amount * amount, child)
             }
             1 => {
                 let levels = dna.f32_in("levels", 2.0, 10.0);
@@ -265,13 +232,13 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
                 posterize(levels, sharpness, child)
             }
             2 => {
-                let amount = dna.f32_in("amount", 2.0, 10.0);
+                let amount = dna.f32_in("amount", 1.0, 5.0);
                 let child = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
-                overdrive(amount, child)
+                overdrive(amount * amount, child)
             }
             3 => {
-                let amount = dna.f32_in("amount", 2.0, 10.0);
+                let amount = dna.f32_in("amount", 1.0, 10.0);
                 let child = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 vreflect(amount, child)
@@ -290,13 +257,13 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
     } else if choice == 2 {
         // Combine two maps with a binary operator.
         let child_complexity = complexity * 0.5 - 1.0;
-        let binary_node = match dna.choice(
+        let binary_node = match dna.index(
             "binary node",
             [
                 (1.0, "rotate"),
                 (1.0, "softmix"),
                 (1.0, "layer"),
-                (1.0, "displace"),
+                (2.0, "displace"),
             ],
         ) {
             0 => {
@@ -308,15 +275,15 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
                 rotate(amount, child_a, child_b)
             }
             1 => {
-                let amount = dna.f32_in("amount", 1.0, 10.0);
+                let amount = dna.f32_in("amount", 1.0, 5.0);
                 let child_a = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 let child_b = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
-                softmix3(amount, child_a, child_b)
+                softmix3(amount * amount, child_a, child_b)
             }
             2 => {
-                let width = dna.f32_in("width", 1.0, 4.0);
+                let width = dna.f32_in("width", 1.0, 3.0);
                 let ease = gen_ease(dna, "layer ease");
                 let child_a = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
@@ -343,14 +310,14 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
         let first_octave = dna.u32_in("first octave", 0, octaves as u32 - 1) as usize;
         let lacunarity = dna.f32_xform("lacunarity", |x| xerp(1.5, 3.0, x));
         let displace = dna.call(|dna| {
-            if dna.choice("displace", [(0.333, "on"), (0.666, "off")]) == 0 {
+            if dna.index("displace", [(0.333, "on"), (0.666, "off")]) == 0 {
                 dna.f32_in("amount", 0.0, 0.5)
             } else {
                 0.0
             }
         });
         let layer = dna.call(|dna| {
-            if dna.choice("layer", [(0.333, "on"), (0.666, "off")]) == 0 {
+            if dna.index("layer", [(0.333, "on"), (0.666, "off")]) == 0 {
                 dna.f32_in("width", 1.0, 4.0)
             } else {
                 0.0

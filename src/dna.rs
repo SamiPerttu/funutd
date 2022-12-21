@@ -351,7 +351,7 @@ impl Dna {
     }
 
     /// Returns the index of a choice.
-    pub fn choice<const T: usize>(&mut self, name: &str, choices: [(f32, &str); T]) -> u32 {
+    pub fn index<const T: usize>(&mut self, name: &str, choices: [(f32, &str); T]) -> u32 {
         let hash = self.get_parameter_hash(name);
         let value = self.draw_value(hash);
         let choice_index = if (value as usize) < choices.len() && choices[value as usize].0 > 0.0 {
@@ -388,6 +388,50 @@ impl Dna {
             );
         }
         choice_index as u32
+    }
+
+    /// Returns a choice.
+    pub fn choice<X: Clone, const T: usize>(
+        &mut self,
+        name: &str,
+        choices: [(f32, &str, X); T],
+    ) -> X {
+        let hash = self.get_parameter_hash(name);
+        let value = self.draw_value(hash);
+        let choice_index = if (value as usize) < choices.len() && choices[value as usize].0 > 0.0 {
+            value as usize
+        } else {
+            let total_weight: f32 = choices.iter().map(|(weight, _, _)| weight).sum();
+            let mut value = value as f32 / ((1u64 << 32) as f32) * total_weight;
+            let mut choice_index = 0;
+            for (i, (weight, _, _)) in choices.iter().enumerate() {
+                value -= weight;
+                if value <= 0.0 {
+                    choice_index = i;
+                    break;
+                }
+            }
+            choice_index
+        };
+        if self.is_interactive() {
+            let mut c = Vec::new();
+            for (weight, name, _) in &choices {
+                if *weight > 0.0 {
+                    c.push((*name).into());
+                }
+            }
+            self.add_parameter(
+                ParameterKind::Categorical,
+                name.into(),
+                choices[choice_index].1.to_string(),
+                self.address.clone(),
+                choices.len() as u32 - 1,
+                choice_index as u32,
+                hash,
+                c,
+            );
+        }
+        choices[choice_index].2.clone()
     }
 
     /// Call a subgenerator.

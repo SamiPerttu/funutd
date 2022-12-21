@@ -312,13 +312,13 @@ impl Rnd {
         self.i64_to(limit as i64) as i32
     }
 
-    /// Generates the next double precision random number in [0, 1[.
+    /// Generates the next double precision random number in 0...1.
     #[inline]
     pub fn f64(&mut self) -> f64 {
         (self.step() as f64) / ((1u128 << 64) as f64)
     }
 
-    /// Generates the next single precision random number in [0, 1[.
+    /// Generates the next single precision random number in 0...1.
     #[inline]
     pub fn f32(&mut self) -> f32 {
         (self.step() as f32) / ((1u128 << 64) as f32)

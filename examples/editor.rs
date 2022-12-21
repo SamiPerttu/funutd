@@ -471,9 +471,10 @@ impl eframe::App for EditorApp {
                 ui.vertical(|ui| {
                     ui.label("Tiling Mode");
                     let previous_mode = self.tiling_mode;
-                    ui.radio_value(&mut self.tiling_mode, TilingMode::All, "All");
-                    ui.radio_value(&mut self.tiling_mode, TilingMode::XY, "XY");
                     ui.radio_value(&mut self.tiling_mode, TilingMode::None, "None");
+                    ui.radio_value(&mut self.tiling_mode, TilingMode::Z, "Z");
+                    ui.radio_value(&mut self.tiling_mode, TilingMode::XY, "XY");
+                    ui.radio_value(&mut self.tiling_mode, TilingMode::All, "All");
                     if self.tiling_mode != previous_mode {
                         for i in 0..VISIBLE_SLOTS {
                             self.dna_updated(i);

@@ -104,11 +104,11 @@ impl Hasher for TileNone {
     }
     fn hash_x(&self, basis: &Basis, current: u64, dx: i32) -> u64 {
         let x = basis.ix.wrapping_add(dx as u32);
-        hash64f(current ^ x as u64 ^ basis.seed as u64)
+        hash64a(current ^ x as u64 ^ basis.seed as u64)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = basis.iy.wrapping_add(dy as u32);
-        hash64a(current ^ y as u64)
+        hash64f(current ^ y as u64)
     }
     fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
         let z = basis.iz.wrapping_add(dz as u32);
@@ -163,13 +163,13 @@ impl Hasher for TileAll {
         let x = (basis.ix as i32)
             .wrapping_add(dx)
             .rem_euclid(basis.sx as i32);
-        hash64f(current ^ x as u64 ^ basis.seed as u64)
+        hash64a(current ^ x as u64 ^ basis.seed as u64)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = (basis.iy as i32)
             .wrapping_add(dy)
             .rem_euclid(basis.sy as i32);
-        hash64a(current ^ y as u64)
+        hash64f(current ^ y as u64)
     }
     fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
         let z = (basis.iz as i32)
@@ -224,13 +224,13 @@ impl Hasher for TileXY {
         let x = (basis.ix as i32)
             .wrapping_add(dx)
             .rem_euclid(basis.sx as i32);
-        hash64f(current ^ x as u64 ^ basis.seed as u64)
+        hash64a(current ^ x as u64 ^ basis.seed as u64)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = (basis.iy as i32)
             .wrapping_add(dy)
             .rem_euclid(basis.sy as i32);
-        hash64a(current ^ y as u64)
+        hash64f(current ^ y as u64)
     }
     fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
         let z = basis.iz.wrapping_add(dz as u32);
@@ -241,6 +241,61 @@ impl Hasher for TileXY {
             String::from("tile_xy()")
         } else {
             format!("tile_xy_in({}, {})", self.sx, self.sy)
+        }
+    }
+}
+
+/// This hasher tiles the Z axis.
+/// Frequencies are rounded to the nearest positive integer.
+#[derive(Clone)]
+pub struct TileZ {
+    sz: u32,
+}
+
+pub fn tile_z() -> TileZ {
+    TileZ { sz: 1 }
+}
+pub fn tile_z_in(sz: u32) -> TileZ {
+    TileZ { sz }
+}
+
+impl Hasher for TileZ {
+    fn query(&self, seed: u64, frequency: f32, point: Vec3a) -> Basis {
+        let fr = frequency.round().max(1.0);
+        let fi = fr as u32;
+        let p = fr * point + hash_01(seed);
+        let i = p.floor();
+        let sz = self.sz * fi;
+        Basis {
+            seed,
+            ix: (i.x as i32) as u32,
+            iy: (i.y as i32) as u32,
+            iz: (i.z as i32).rem_euclid(sz as i32) as u32,
+            sx: 0,
+            sy: 0,
+            sz,
+            d: p - i,
+        }
+    }
+    fn hash_x(&self, basis: &Basis, current: u64, dx: i32) -> u64 {
+        let x = basis.ix.wrapping_add(dx as u32);
+        hash64a(current ^ x as u64)
+    }
+    fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
+        let y = basis.iy.wrapping_add(dy as u32);
+        hash64f(current ^ y as u64)
+    }
+    fn hash_z(&self, basis: &Basis, current: u64, dz: i32) -> u64 {
+        let z = (basis.iz as i32)
+            .wrapping_add(dz)
+            .rem_euclid(basis.sz as i32);
+        hash64b(current ^ z as u64)
+    }
+    fn get_code(&self) -> String {
+        if self.sz == 1 {
+            String::from("tile_z()")
+        } else {
+            format!("tile_z_in({})", self.sz)
         }
     }
 }
@@ -266,6 +321,7 @@ pub trait Texture: Sync + Send {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TilingMode {
     None,
+    Z,
     XY,
     All,
 }

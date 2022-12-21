@@ -1,6 +1,6 @@
 //! Hash functions. All of the hashes here are permutations.
 
-/// 32-bit hash by degski. Inverse of hash32a_inverse.
+/// 32-bit hash by degski. Inverse of `hash32a_inverse`.
 #[inline]
 pub fn hash32a(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x45d9f3b);
@@ -8,7 +8,7 @@ pub fn hash32a(x: u32) -> u32 {
     x ^ (x >> 16)
 }
 
-/// 32-bit hash by degski. Inverse of hash32a.
+/// 32-bit hash by degski. Inverse of `hash32a`.
 #[inline]
 pub fn hash32a_inverse(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x119de1f3);
@@ -16,7 +16,7 @@ pub fn hash32a_inverse(x: u32) -> u32 {
     x ^ (x >> 16)
 }
 
-/// 32-bit hash by Chris Wellon. Inverse of hash32b_inverse.
+/// 32-bit hash by Chris Wellon. Inverse of `hash32b_inverse`.
 #[inline]
 pub fn hash32b(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x7feb352d);
@@ -24,7 +24,7 @@ pub fn hash32b(x: u32) -> u32 {
     x ^ (x >> 16)
 }
 
-/// 32-bit hash by Chris Wellon. Inverse of hash32b.
+/// 32-bit hash by Chris Wellon. Inverse of `hash32b`.
 #[inline]
 pub fn hash32b_inverse(x: u32) -> u32 {
     let x = (x ^ (x >> 16)).wrapping_mul(0x43021123);
@@ -57,7 +57,7 @@ pub fn hash32e(x: u32) -> u32 {
     x ^ (x >> 14)
 }
 
-/// 64-bit hash by degski. Inverse of hash64a_inverse.
+/// 64-bit hash by degski. Inverse of `hash64a_inverse`.
 #[inline]
 pub fn hash64a(x: u64) -> u64 {
     let x = (x ^ (x >> 32)).wrapping_mul(0xd6e8feb86659fd93);
@@ -65,7 +65,7 @@ pub fn hash64a(x: u64) -> u64 {
     x ^ (x >> 32)
 }
 
-/// 64-bit hash by degski. Inverse of hash64a.
+/// 64-bit hash by degski. Inverse of `hash64a`.
 #[inline]
 pub fn hash64a_inverse(x: u64) -> u64 {
     let x = (x ^ (x >> 32)).wrapping_mul(0xcfee444d8b59a89b);
