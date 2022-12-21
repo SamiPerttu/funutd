@@ -18,6 +18,9 @@ This is an alpha version undergoing rapid development and may contain rough edge
 The type returned by texture generators is `Box<dyn Texture>`.
 `Texture` is the trait implemented by procedural textures.
 
+The basic operation is querying the value of a texture at a point in 3-D space
+with the `at` method. The value is another 3-D vector.
+
 The canonical range of texture values is -1...1 in each component.
 This applies to the palette component as well.
 
@@ -46,6 +49,9 @@ frequencies are rounded to the nearest whole number.
 - `tile_xy()` - for each fixed `z`, the `xy` plane is filled with copies
 of the unit square, while moving in the `z` dimension produces infinite variation.
 Texture frequencies are rounded to the nearest whole number.
+- `tile_z()` - moving in the `xy` plane produces infinite variation,
+with the texture repeating at integer intervals along the `z` axis only.
+Texture frequencies are rounded to the nearest whole number.
 
 To tile a different shape than the unit cube or square:
 
@@ -54,6 +60,9 @@ Texture frequencies are rounded to the nearest whole number.
 - `tile_xy_in(x, y)` - for each fixed `z`, the `xy` plane is filled with copies
 of `(x, y)` sized rectangles, while moving in the `z` dimension produces infinite
 variation. Texture frequencies are rounded to the nearest whole number.
+- `tile_z_in(z)` - moving in the `xy` plane produces infinite variation,
+with the texture repeating at intervals of `z` along the `z` axis only.
+Texture frequencies are rounded to the nearest whole number.
 
 ## Future
 
