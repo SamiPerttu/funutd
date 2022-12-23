@@ -7,6 +7,7 @@ use super::math::*;
 use super::*;
 
 /// Roughly isotropic value noise.
+#[derive(Clone)]
 pub struct VNoise<H: Hasher> {
     seed: u64,
     frequency: f32,
@@ -102,6 +103,7 @@ impl<H: Hasher> Texture for VNoise<H> {
 }
 
 /// Roughly isotropic gradient noise.
+#[derive(Clone)]
 pub struct Noise<H: Hasher> {
     seed: u64,
     frequency: f32,

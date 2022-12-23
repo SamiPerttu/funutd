@@ -3,6 +3,7 @@
 use super::hash::*;
 use super::math::*;
 use super::*;
+use dyn_clone::DynClone;
 
 /// Bases attach a feature grid to a queried point.
 /// Once attached, the grid is resolution independent:
@@ -301,7 +302,7 @@ impl Hasher for TileZ {
 }
 
 /// Textures are self-maps in 3-space.
-pub trait Texture: Sync + Send {
+pub trait Texture: Sync + Send + DynClone {
     /// Evaluate texture at `point` using `frequency` for basis frequencies.
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a;
 
@@ -316,6 +317,8 @@ pub trait Texture: Sync + Send {
     /// Get code for instantiating this texture without specifying basis frequencies.
     fn get_basis_code(&self) -> String;
 }
+
+dyn_clone::clone_trait_object!(Texture);
 
 /// Tiling modes.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

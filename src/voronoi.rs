@@ -204,6 +204,7 @@ impl VoronoiState {
 }
 
 /// Voronoi basis. Cell colors are omitted here, unlike in Camo.
+#[derive(Clone)]
 pub struct Voronoi<H: Hasher> {
     seed: u64,
     frequency: f32,
@@ -308,6 +309,7 @@ pub fn voronoi_basis<H: 'static + Hasher>(
 }
 
 /// Camo basis. A colored Worley basis.
+#[derive(Clone)]
 pub struct Camo<H: Hasher> {
     seed: u64,
     frequency: f32,

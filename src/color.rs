@@ -353,12 +353,14 @@ pub fn okhsv_to_srgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     )
 }
 
+#[derive(Clone)]
 pub enum Space {
     HSL,
     HSV,
 }
 
 /// Palette implemented as a 3-D LUT.
+#[derive(Clone)]
 pub struct Palette {
     lut: Vec<Vec3>,
     brightness: f32,

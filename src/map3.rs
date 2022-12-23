@@ -6,6 +6,7 @@ use super::math::*;
 use super::*;
 
 /// Zero texture.
+#[derive(Clone)]
 pub struct Zero {}
 
 impl Texture for Zero {
@@ -26,6 +27,7 @@ pub fn zero() -> Zero {
 }
 
 /// Saturates components.
+#[derive(Clone)]
 pub struct Saturate {
     /// Amount (amount > 0) equals derivative at origin.
     amount: f32,
@@ -58,6 +60,7 @@ pub fn saturate(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
 
 /// Reflect: applies a wavy function to texture values with an offset, which can
 /// spread and reflect components.
+#[derive(Clone)]
 pub struct Reflect {
     amount: f32,
     offset: Vec3a,
@@ -105,6 +108,7 @@ pub fn reflect(amount: f32, offset: Vec3, texture: Box<dyn Texture>) -> Box<dyn 
 }
 
 /// Posterize: applies a smooth step function in proportion to texture value magnitude.
+#[derive(Clone)]
 pub struct Posterize {
     levels: f32,
     sharpness: f32,
@@ -157,6 +161,7 @@ pub fn posterize(levels: f32, sharpness: f32, texture: Box<dyn Texture>) -> Box<
 }
 
 /// Saturates components while retaining component proportions.
+#[derive(Clone)]
 pub struct Overdrive {
     /// Amount (amount > 0) equals derivative at origin.
     amount: f32,
@@ -195,6 +200,7 @@ pub fn overdrive(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
 }
 
 /// Applies a wavy function in proportion to vector magnitude.
+#[derive(Clone)]
 pub struct VReflect {
     /// Amount (amount > 0) equals derivative at origin.
     amount: f32,
@@ -230,6 +236,7 @@ pub fn vreflect(amount: f32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
 }
 
 /// Rotates values of one texture with values from another texture.
+#[derive(Clone)]
 pub struct Rotate {
     amount: f32,
     texture_a: Box<dyn Texture>,
@@ -281,6 +288,7 @@ pub fn rotate(
 }
 
 /// Mixes between two textures weighted with their vector magnitudes.
+#[derive(Clone)]
 pub struct Softmix3 {
     amount: f32,
     texture_a: Box<dyn Texture>,
@@ -328,6 +336,7 @@ pub fn softmix3(
 }
 
 /// Layers one texture on another with weight depending on distance between texture values.
+#[derive(Clone)]
 pub struct Layer {
     width: f32,
     ease: Ease,
@@ -383,6 +392,7 @@ pub fn layer(
 }
 
 /// Displaces lookup of one texture by values from another texture.
+#[derive(Clone)]
 pub struct Displace {
     amount: f32,
     texture_a: Box<dyn Texture>,
@@ -426,6 +436,7 @@ pub fn displace(
     })
 }
 
+#[derive(Clone)]
 pub struct Fractal {
     base_f: f32,
     octaves: usize,
