@@ -166,7 +166,7 @@ struct ImageSlot {
 impl ImageSlot {
     pub fn get_texture(&mut self, tiling_mode: TilingMode) -> Box<dyn Texture> {
         self.dna.reset();
-        genmap3palette(100.0, tiling_mode, &mut self.dna)
+        genmap3palette(50.0, tiling_mode, &mut self.dna)
     }
 }
 

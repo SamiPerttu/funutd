@@ -11,6 +11,7 @@ use super::noise::*;
 use super::voronoi::*;
 use super::*;
 
+/// Generate a distance metric.
 pub fn gen_metric(dna: &mut Dna, name: &str) -> Distance {
     dna.choice(
         name,
@@ -50,7 +51,6 @@ pub fn gen_ease_voronoi(dna: &mut Dna, name: &str) -> Ease {
             (1.0, "smooth5", Ease::Smooth5),
             (1.0, "smooth7", Ease::Smooth7),
             (1.0, "smooth9", Ease::Smooth9),
-            (1.0, "sqrt", Ease::Sqrt),
             (1.0, "squared", Ease::Squared),
         ],
     )
@@ -120,14 +120,28 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
     hasher: H,
     dna: &mut Dna,
 ) -> Box<dyn Texture> {
-    let basis_weight = if complexity <= 10.0 { 1.5 } else { 0.01 };
-    let unary_weight = if complexity >= 5.0 { 1.0 } else { 0.01 };
-    let binary_weight = if complexity >= 8.0 { 1.0 } else { 0.01 };
-    let fractal_weight: f32 = if complexity >= 9.0 {
+    let basis_weight = if complexity <= 10.0 {
+        1.5
+    } else if complexity <= 40.0 {
         0.8
-    } else if is_fractal {
-        0.0
     } else {
+        0.4
+    };
+    let unary_weight = if complexity >= 20.0 {
+        1.5
+    } else if complexity >= 5.0 {
+        1.0
+    } else {
+        0.01
+    };
+    let binary_weight = if complexity >= 8.0 { 1.0 } else { 0.01 };
+    let fractal_weight: f32 = if is_fractal {
+        // If we are a child of a fractalizer, we cannot start a new one.
+        0.0
+    } else if complexity >= 9.0 {
+        0.8
+    } else {
+        // A small weight is enough to allow the user to edit the value in the editor.
         0.01
     };
 
@@ -145,9 +159,10 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
         // Generate 1 octave of something.
         let seed = dna.u32("seed") as u64;
         let frequency = if is_fractal {
+            // The frequency comes from the fractalizer so we can choose any value.
             2.0
         } else {
-            dna.f32_xform("frequency", |x| xerp(4.0, 32.0, x))
+            dna.f32_xform("frequency", |x| xerp(2.0, 32.0, x))
         };
         let texture: Box<dyn Texture> = match dna.index(
             "basis",
@@ -215,7 +230,8 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
                 (1.0, "posterize"),
                 (1.0, "overdrive"),
                 (1.0, "vreflect"),
-                (3.0, "reflect"),
+                (2.0, "reflect"),
+                (3.0, "shift"),
             ],
         ) {
             0 => {
@@ -243,7 +259,7 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 vreflect(amount, child)
             }
-            _ => {
+            4 => {
                 let amount = dna.f32_in("amount", 1.0, 2.0);
                 let x_offset = dna.f32_in("X offset", -1.0, 1.0);
                 let y_offset = dna.f32_in("Y offset", -1.0, 1.0);
@@ -251,6 +267,12 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
                 let child = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 reflect(amount, vec3(x_offset, y_offset, z_offset), child)
+            }
+            _ => {
+                let seed = dna.u32("seed");
+                let child = dna
+                    .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
+                shift(seed, child)
             }
         };
         unary_node

@@ -23,7 +23,7 @@ pub struct Basis {
     pub sy: u32,
     /// For repeating hashers: total number of Z tiles.
     pub sz: u32,
-    /// Position inside cell with components in left-closed range [0, 1[.
+    /// Position inside cell with components in 0...1.
     pub d: Vec3a,
 }
 
@@ -304,9 +304,13 @@ impl Hasher for TileZ {
 /// Textures are self-maps in 3-space.
 pub trait Texture: Sync + Send + DynClone {
     /// Evaluate texture at `point` using `frequency` for basis frequencies.
+    /// The canonical value range is -1...1 for each dimension.
+    /// Some textures may exceed it.
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a;
 
     /// Evaluate texture at `point`.
+    /// The canonical value range is -1...1 for each dimension.
+    /// Some textures may exceed it.
     fn at(&self, point: Vec3a) -> Vec3a {
         self.at_frequency(point, None)
     }

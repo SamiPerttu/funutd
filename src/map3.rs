@@ -1,6 +1,7 @@
 //! Texture unary and binary operators.
 
 use super::ease::*;
+use super::hash::*;
 use super::map3base::*;
 use super::math::*;
 use super::*;
@@ -34,7 +35,6 @@ pub struct Saturate {
     texture: Box<dyn Texture>,
 }
 
-/// Saturates components.
 impl Texture for Saturate {
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         softsign(self.texture.at_frequency(point, frequency) * self.amount)
@@ -524,5 +524,45 @@ pub fn fractal(
         lacunarity,
         displace,
         layer,
+    })
+}
+
+/// Shifts components around.
+/// Intended to induce more dependencies between components.
+#[derive(Clone)]
+pub struct Shift {
+    seed: u32,
+    rotation: Quat,
+    origin: Vec3a,
+    texture: Box<dyn Texture>,
+}
+
+impl Texture for Shift {
+    fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
+        let v = self.texture.at_frequency(point, frequency);
+        (self.rotation * (v - self.origin)) + self.origin
+    }
+    fn get_code(&self) -> String {
+        format!("shift({}, {})", self.seed, self.texture.get_code())
+    }
+    fn get_basis_code(&self) -> String {
+        format!("shift({}, {})", self.seed, self.texture.get_basis_code())
+    }
+}
+
+/// Shifts components around.
+pub fn shift(seed: u32, texture: Box<dyn Texture>) -> Box<dyn Texture> {
+    let axis = hash_unit(seed as u64);
+    let angle = hash_01(hash64c(seed as u64));
+    let rotation = Quat::from_axis_angle(
+        axis.into(),
+        lerp(f32::TAU * 1.0 / 8.0, f32::TAU * 7.0 / 8.0, angle.x),
+    );
+    let origin = hash_11(hash64d(seed as u64));
+    Box::new(Shift {
+        seed,
+        rotation,
+        origin,
+        texture,
     })
 }
