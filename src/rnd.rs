@@ -165,7 +165,7 @@ impl Rnd {
     /// Sets high bits of position from low bits of seed.
     pub fn from_u128(seed: u128) -> Self {
         let mut krull = Rnd::from_u64(((seed >> 64) ^ seed) as u64);
-        krull.set_position((seed as u128) << 64);
+        krull.set_position(seed << 64);
         krull
     }
 

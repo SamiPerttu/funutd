@@ -13,7 +13,7 @@ use std::thread;
 
 /// Convert texture value to u8. Canonical texture range is -1...1.
 pub fn convert_u8(x: f32) -> u8 {
-    ((x * 0.5 + 0.5).min(1.0).max(0.0) * 255.99999).floor() as u8
+    ((x + 1.0) * (0.5 * 255.99999)).clamp(0.0, 255.99999) as u8
 }
 
 #[derive(Default, Clone)]

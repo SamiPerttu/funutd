@@ -105,7 +105,7 @@ impl Hasher for TileNone {
     }
     fn hash_x(&self, basis: &Basis, current: u64, dx: i32) -> u64 {
         let x = basis.ix.wrapping_add(dx as u32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
+        hash64a(current ^ x as u64 ^ basis.seed)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = basis.iy.wrapping_add(dy as u32);
@@ -164,7 +164,7 @@ impl Hasher for TileAll {
         let x = (basis.ix as i32)
             .wrapping_add(dx)
             .rem_euclid(basis.sx as i32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
+        hash64a(current ^ x as u64 ^ basis.seed)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = (basis.iy as i32)
@@ -225,7 +225,7 @@ impl Hasher for TileXY {
         let x = (basis.ix as i32)
             .wrapping_add(dx)
             .rem_euclid(basis.sx as i32);
-        hash64a(current ^ x as u64 ^ basis.seed as u64)
+        hash64a(current ^ x as u64 ^ basis.seed)
     }
     fn hash_y(&self, basis: &Basis, current: u64, dy: i32) -> u64 {
         let y = (basis.iy as i32)
