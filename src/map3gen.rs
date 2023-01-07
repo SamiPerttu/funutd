@@ -298,11 +298,12 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
             }
             1 => {
                 let amount = dna.f32_in("amount", 1.0, 5.0);
+                let displacement = dna.f32_in("displacement", 0.0, 0.5);
                 let child_a = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 let child_b = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
-                softmix3(amount * amount, child_a, child_b)
+                softmix3(amount * amount, displacement, child_a, child_b)
             }
             2 => {
                 let width = dna.f32_in("width", 1.0, 3.0);
@@ -314,7 +315,7 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
                 layer(width, ease, child_a, child_b)
             }
             _ => {
-                let amount = dna.f32_in("amount", 0.05, 0.25);
+                let amount = dna.f32_in("amount", 0.0, 0.5);
                 let child_a = dna
                     .call(|dna| genmap3_hasher(child_complexity, is_fractal, hasher.clone(), dna));
                 let child_b = dna
@@ -325,7 +326,7 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
         binary_node
     } else {
         // Fractalize map by sampling many octaves.
-        let child_complexity = min(8.0, complexity * 0.5 - 1.0);
+        let child_complexity = min(20.0, complexity * 0.5 - 1.0);
         let base_f = dna.f32_in("base frequency", 1.5, 9.0);
         let roughness = dna.f32_xform("roughness", |x| xerp(0.4, 0.9, x));
         let octaves = dna.u32_in("octaves", 2, 10) as usize;

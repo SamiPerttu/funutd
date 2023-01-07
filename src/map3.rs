@@ -291,6 +291,7 @@ pub fn rotate(
 #[derive(Clone)]
 pub struct Softmix3 {
     amount: f32,
+    displacement: f32,
     texture_a: Box<dyn Texture>,
     texture_b: Box<dyn Texture>,
 }
@@ -298,7 +299,10 @@ pub struct Softmix3 {
 impl Texture for Softmix3 {
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let u = self.texture_a.at_frequency(point, frequency);
-        let v = self.texture_b.at_frequency(point, frequency);
+        let v = self.texture_b.at_frequency(
+            point + u * self.displacement / frequency.unwrap_or(2.0),
+            frequency,
+        );
         let vw: f32 = softexp(v * self.amount).length();
         let uw: f32 = softexp(u * self.amount).length();
         let epsilon: f32 = 1.0e-9;
@@ -306,16 +310,18 @@ impl Texture for Softmix3 {
     }
     fn get_code(&self) -> String {
         format!(
-            "softmix3({:?}, {}, {})",
+            "softmix3({:?}, {:?}, {}, {})",
             self.amount,
+            self.displacement,
             self.texture_a.get_code(),
             self.texture_b.get_code()
         )
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "softmix3({:?}, {}, {})",
+            "softmix3({:?}, {:?}, {}, {})",
             self.amount,
+            self.displacement,
             self.texture_a.get_basis_code(),
             self.texture_b.get_basis_code()
         )
@@ -324,12 +330,14 @@ impl Texture for Softmix3 {
 
 pub fn softmix3(
     amount: f32,
+    displacement: f32,
     texture_a: Box<dyn Texture>,
     texture_b: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
     assert!(amount > 0.0);
     Box::new(Softmix3 {
         amount,
+        displacement,
         texture_a,
         texture_b,
     })
@@ -402,8 +410,10 @@ pub struct Displace {
 impl Texture for Displace {
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let u = self.texture_a.at_frequency(point, frequency);
-        self.texture_b
-            .at_frequency(point + u * self.amount, frequency)
+        self.texture_b.at_frequency(
+            point + u * self.amount / frequency.unwrap_or(2.0),
+            frequency,
+        )
     }
     fn get_code(&self) -> String {
         format!(
@@ -428,7 +438,6 @@ pub fn displace(
     texture_a: Box<dyn Texture>,
     texture_b: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
-    assert!(amount > 0.0);
     Box::new(Displace {
         amount,
         texture_a,
@@ -540,7 +549,8 @@ pub struct Shift {
 impl Texture for Shift {
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let v = self.texture.at_frequency(point, frequency);
-        (self.rotation * (v - self.origin)) + self.origin
+        let p = (self.rotation * (v - self.origin)) + self.origin;
+        vec3a(sin(p.x), sin(p.y), sin(p.z))
     }
     fn get_code(&self) -> String {
         format!("shift({}, {})", self.seed, self.texture.get_code())

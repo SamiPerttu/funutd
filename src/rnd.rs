@@ -46,33 +46,33 @@ impl Default for Rnd {
 // We define the origin as equal to the stream number XOR some arbitrary constant
 // in order to desynchronize the streams. Here we invert all the bits,
 // which potentially enhances compression of RNGs at position 0 when serialized.
-#[inline]
+#[inline(always)]
 fn origin_0(stream: u64) -> u64 {
     !stream
 }
 
-#[inline]
+#[inline(always)]
 fn origin_128(stream: u64) -> u128 {
     origin_0(stream) as u128
 }
 
 impl Rnd {
-    #[inline]
+    #[inline(always)]
     fn lcg_128(&self) -> u128 {
         self.lcg0 as u128 | ((self.lcg1 as u128) << 64)
     }
 
-    #[inline]
+    #[inline(always)]
     fn multiplier(&self) -> u64 {
         LCG_M65_1 as u64
     }
 
-    #[inline]
+    #[inline(always)]
     fn multiplier_128(&self) -> u128 {
         LCG_M65_1
     }
 
-    #[inline]
+    #[inline(always)]
     fn increment_128(&self) -> u128 {
         // LCG increment is odd in full period sequences.
         // Unlike with LCG multipliers, any odd increment works fine.
@@ -85,13 +85,13 @@ impl Rnd {
     }
 
     /// Origin is LCG state at position 0 in current stream.
-    #[inline]
+    #[inline(always)]
     fn origin_0(&self) -> u64 {
         origin_0(self.stream)
     }
 
     /// Origin is LCG state at position 0 in current stream.
-    #[inline]
+    #[inline(always)]
     fn origin_128(&self) -> u128 {
         origin_128(self.stream)
     }
@@ -131,6 +131,7 @@ impl Rnd {
 
     /// Creates a new Krull64 RNG.
     /// Stream and position are set to 0.
+    #[inline(always)]
     pub fn new() -> Self {
         Rnd {
             lcg0: origin_0(0),
@@ -142,6 +143,7 @@ impl Rnd {
     /// Creates a new Krull64 RNG from a 32-bit seed.
     /// Stream is set to the given seed and position is set to 0.
     /// All seeds work equally well.
+    #[inline(always)]
     pub fn from_u32(seed: u32) -> Self {
         Rnd::from_u64(seed as u64)
     }
@@ -149,6 +151,7 @@ impl Rnd {
     /// Creates a new Krull64 RNG from a 64-bit seed.
     /// Stream is set to the given seed and position is set to 0.
     /// All seeds work equally well.
+    #[inline(always)]
     pub fn from_u64(seed: u64) -> Self {
         Rnd {
             lcg0: origin_0(seed),
@@ -229,6 +232,7 @@ impl Rnd {
     }
 
     /// Sets stream and initializes position to 0.
+    #[inline]
     pub fn set_stream(&mut self, stream: u64) {
         self.stream = stream;
         self.reset();
@@ -265,6 +269,7 @@ impl Rnd {
     }
 
     /// Returns the next u64 in the inclusive range (min, max).
+    #[inline]
     pub fn u64_in(&mut self, min: u64, max: u64) -> u64 {
         assert!(max >= min);
         let diff = max - min;
@@ -276,38 +281,45 @@ impl Rnd {
     }
 
     /// Returns the next u32 in the inclusive range (min, max).
+    #[inline]
     pub fn u32_in(&mut self, min: u32, max: u32) -> u32 {
         self.u64_in(min as u64, max as u64) as u32
     }
 
     /// Returns the next i64 in the inclusive range (min, max).
+    #[inline]
     pub fn i64_in(&mut self, min: i64, max: i64) -> i64 {
         self.u64_in(min as u64, max as u64) as i64
     }
 
     /// Returns the next i32 in the inclusive range (min, max).
+    #[inline]
     pub fn i32_in(&mut self, min: i32, max: i32) -> i32 {
         self.i64_in(min as i64, max as i64) as i32
     }
 
     /// Returns the next u64 in the left closed range [0, limit[.
+    #[inline]
     pub fn u64_to(&mut self, limit: u64) -> u64 {
         assert!(limit > 0);
         self.u64_in(0, limit - 1)
     }
 
     /// Returns the next u32 in the left closed range [0, limit[.
+    #[inline]
     pub fn u32_to(&mut self, limit: u32) -> u32 {
         self.u64_to(limit as u64) as u32
     }
 
     /// Returns the next i64 in the left closed range [0, limit[.
+    #[inline]
     pub fn i64_to(&mut self, limit: i64) -> i64 {
         assert!(limit > 0);
         self.i64_in(0, limit - 1)
     }
 
     /// Returns the next i32 in the left closed range [0, limit[.
+    #[inline]
     pub fn i32_to(&mut self, limit: i32) -> i32 {
         self.i64_to(limit as i64) as i32
     }
@@ -318,13 +330,26 @@ impl Rnd {
         (self.step() as f64) / ((1u128 << 64) as f64)
     }
 
+    /// Generates the next single precision random number in min...max.
+    #[inline]
+    pub fn f64_in(&mut self, min: f64, max: f64) -> f64 {
+        min + (max - min) * self.f64()
+    }
+
     /// Generates the next single precision random number in 0...1.
     #[inline]
     pub fn f32(&mut self) -> f32 {
         (self.step() as f32) / ((1u128 << 64) as f32)
     }
 
+    /// Generates the next single precision random number in min...max.
+    #[inline]
+    pub fn f32_in(&mut self, min: f32, max: f32) -> f32 {
+        min + (max - min) * self.f32()
+    }
+
     /// Generates true with probability p.
+    #[inline]
     pub fn bool(&mut self, p: f64) -> bool {
         self.f64() < p
     }
