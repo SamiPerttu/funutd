@@ -1,5 +1,8 @@
 # FunUTD
 
+[![crates.io](https://img.shields.io/crates/v/funutd.svg)](https://crates.io/crates/funutd)
+[![License](https://img.shields.io/crates/l/funutd.svg)](https://github.com/SamiPerttu/funutd/README.md)
+
 ## Fun Universal Texture Definitions
 
 FunUTD is a 3-D [procedural texture](https://en.wikipedia.org/wiki/Procedural_texture) library running on the CPU.
