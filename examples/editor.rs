@@ -249,7 +249,8 @@ fn main() {
         "Texture Explorer",
         options,
         Box::new(move |_cc| Box::new(app)),
-    );
+    )
+    .unwrap();
 }
 
 #[derive(PartialEq)]

@@ -124,8 +124,10 @@ pub fn genmap3_hasher<H: 'static + Hasher>(
         1.5
     } else if complexity <= 40.0 {
         0.8
-    } else {
+    } else if complexity <= 80.0 {
         0.4
+    } else {
+        0.2
     };
     let unary_weight = if complexity >= 20.0 {
         1.5

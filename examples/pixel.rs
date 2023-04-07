@@ -42,7 +42,7 @@ fn main() -> Result<(), Error> {
     event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            world.draw(pixels.get_frame_mut());
+            world.draw(pixels.frame_mut());
             if pixels.render().is_err() {
                 *control_flow = ControlFlow::Exit;
                 return;
@@ -52,7 +52,10 @@ fn main() -> Result<(), Error> {
         // Handle input events
         if input.update(&event) {
             // Close events
-            if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
+            if input.key_pressed(VirtualKeyCode::Escape)
+                || input.close_requested()
+                || input.destroyed()
+            {
                 *control_flow = ControlFlow::Exit;
                 return;
             }
