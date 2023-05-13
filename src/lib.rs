@@ -2,6 +2,7 @@
 
 #[allow(non_snake_case)]
 #[allow(clippy::excessive_precision)]
+#[allow(clippy::too_many_arguments)]
 pub mod color;
 pub mod distance;
 #[allow(clippy::too_many_arguments)]

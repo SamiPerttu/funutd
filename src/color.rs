@@ -363,43 +363,75 @@ pub enum Space {
 #[derive(Clone)]
 pub struct Palette {
     lut: Vec<Vec3>,
-    brightness: f32,
-    hue_min: f32,
-    hue_amount: f32,
-    saturation: f32,
-    space: Space,
+    h1: f32,
+    s1: f32,
+    l1: f32,
+    h2: f32,
+    s2: f32,
+    l2: f32,
+    h3: f32,
+    s3: f32,
+    l3: f32,
     texture: Box<dyn Texture>,
 }
 
-/// Create palette for the specified range of hues. Hue wraps around at 1.
+/// Convert from Cartesian coordinates in [-1, 1] for each component
+/// to cylindrical coordinates (angle, r, z) in [0, 1] for each component.
+pub fn cartesian_to_cylindrical(x: f32, y: f32, z: f32) -> (f32, f32, f32) {
+    let angle = y.atan2(x);
+    let r = sqrt(squared(x) + squared(y)).min(1.0);
+    (
+        angle / std::f32::consts::TAU + 0.5,
+        r,
+        clamp01(z * 0.5 + 0.5),
+    )
+}
+
+/// Convert from HSL coordinates in [0, 1] for each component
+/// to Cartesian coordinates in [-1, 1] for each component.
+pub fn hsl_to_xyz(h: f32, s: f32, l: f32) -> (f32, f32, f32) {
+    (
+        cos(h * std::f32::consts::TAU) * l,
+        sin(h * std::f32::consts::TAU) * l,
+        s * 2.0 - 1.0,
+    )
+}
+
+/// Generate a palette. The palette works by interpolating between 3 anchor points
+/// `(h1, s1, l1)`, `(h2, s2, l2)` `(h3, s3, l3)`
+/// placed inside a HSL color cylinder. All parameters are in 0...1.
 pub fn palette(
-    space: Space,
-    brightness: f32,
-    hue_min: f32,
-    hue_amount: f32,
-    saturation: f32,
+    h1: f32,
+    s1: f32,
+    l1: f32,
+    h2: f32,
+    s2: f32,
+    l2: f32,
+    h3: f32,
+    s3: f32,
+    l3: f32,
     texture: Box<dyn Texture>,
 ) -> Box<dyn Texture> {
     let mut lut = vec![vec3(0.0, 0.0, 0.0); 32 * 32 * 32];
-    let hue_max = hue_min + hue_amount;
-    let value_min = brightness * 0.5;
-    let value_max = 1.0;
+    let (x1, y1, z1) = hsl_to_xyz(h1, s1, l1);
+    let (x2, y2, z2) = hsl_to_xyz(h2, s2, l2);
+    let (x3, y3, z3) = hsl_to_xyz(h3, s3, l3);
 
     for h in 0..32 {
-        let hf = h as f32 / 31.0;
-        let hue = lerp(hue_min, hue_max, hf);
+        let w1 = (h as f32 + 0.5) / 31.5;
         for s in 0..32 {
-            let sf: f32 = s as f32 / 31.0;
+            let w2 = (s as f32 + 0.5) / 31.5;
             for v in 0..32 {
-                let vf = lerp(value_min, value_max, v as f32 / 31.0);
-                let (r, g, b) = match space {
-                    Space::HSL => {
-                        okhsl_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0)))
-                    }
-                    Space::HSV => {
-                        okhsv_to_srgb(hue, sf, pow(vf, exp(0.5 - 1.0 * brightness).max(1.0)))
-                    }
-                };
+                let w3 = (v as f32 + 0.5) / 31.5;
+                let w = w1 + w2 + w3;
+                let w1 = w1 / w;
+                let w2 = w2 / w;
+                let w3 = w3 / w;
+                let x = x1 * w1 + x2 * w2 + x3 * w3;
+                let y = y1 * w1 + y2 * w2 + y3 * w3;
+                let z = z1 * w1 + z2 * w2 + z3 * w3;
+                let (hf, vf, sf) = cartesian_to_cylindrical(x, y, z);
+                let (r, g, b) = okhsl_to_srgb(hf, sf, vf);
                 lut[Palette::index_at(h, s, v)] = vec3(r, g, b);
             }
         }
@@ -407,16 +439,21 @@ pub fn palette(
 
     Box::new(Palette {
         lut,
-        brightness,
-        hue_min,
-        hue_amount,
-        saturation,
-        space,
+        h1,
+        s1,
+        l1,
+        h2,
+        s2,
+        l2,
+        h3,
+        s3,
+        l3,
         texture,
     })
 }
 
 impl Palette {
+    #[inline]
     fn index_at(h: usize, s: usize, v: usize) -> usize {
         (h << 10) + (s << 5) + v
     }
@@ -425,75 +462,61 @@ impl Palette {
 impl Texture for Palette {
     fn at_frequency(&self, point: Vec3a, frequency: Option<f32>) -> Vec3a {
         let u = self.texture.at_frequency(point, frequency);
-        //return vec3a(clamp11(u.x), clamp11(u.y), clamp11(u.z));
-        let h = clamp01(u.x * 0.7 * 0.5 + 0.5);
-        //let h = clamp01(u.x * 0.5 + 0.5);
-        let s = clamp01((u.y).tanh() * 0.5 + 0.5);
-        //let s = clamp01(u.y * 0.5 + 0.5);
-        // Here we have modified the value calculation.
-        // Problem was darkening when value is near zero,
-        // which removes too many degrees of freedom.
-        // Solution: let effective value go near zero only when saturation goes near zero.
-        let v = lerp(s * 0.5, 1.0, clamp01((u.z * 0.8).tanh() * 1.2 * 0.5 + 0.5));
-        //let v = lerp(s * 0.5, 1.0, clamp01(u.z * 0.5 + 0.5));
-        // Saturation damping.
-        let s = s * lerp(1.0, self.saturation, h);
-        let h = h * 30.9999;
-        let s = s * 30.9999;
-        let v = v * 30.9999;
-        let hi = floor(h);
-        let si = floor(s);
-        let vi = floor(v);
-        let hf = h - hi;
-        let sf = s - si;
-        let vf = v - vi;
-        let hi = hi as usize;
-        let si = si as usize;
-        let vi = vi as usize;
-        let i000 = self.lut[Palette::index_at(hi, si, vi)];
-        let i001 = self.lut[Palette::index_at(hi, si, vi + 1)];
-        let i010 = self.lut[Palette::index_at(hi, si + 1, vi)];
-        let i011 = self.lut[Palette::index_at(hi, si + 1, vi + 1)];
-        let i100 = self.lut[Palette::index_at(hi + 1, si, vi)];
-        let i101 = self.lut[Palette::index_at(hi + 1, si, vi + 1)];
-        let i110 = self.lut[Palette::index_at(hi + 1, si + 1, vi)];
-        let i111 = self.lut[Palette::index_at(hi + 1, si + 1, vi + 1)];
-        let i00 = lerp(i000, i001, vf);
-        let i01 = lerp(i010, i011, vf);
-        let i10 = lerp(i100, i101, vf);
-        let i11 = lerp(i110, i111, vf);
-        let i0 = lerp(i00, i01, sf);
-        let i1 = lerp(i10, i11, sf);
-        let i = lerp(i0, i1, hf);
+        let x = clamp01(u.x * 0.5 + 0.5) * 30.9999;
+        let y = clamp01(u.y * 0.5 + 0.5) * 30.9999;
+        let z = clamp01(u.z * 0.5 + 0.5) * 30.9999;
+        let xi = unsafe { f32::to_int_unchecked::<usize>(x) };
+        let yi = unsafe { f32::to_int_unchecked::<usize>(y) };
+        let zi = unsafe { f32::to_int_unchecked::<usize>(z) };
+        let xf = x - xi as f32;
+        let yf = y - yi as f32;
+        let zf = z - zi as f32;
+        let i000 = self.lut[Palette::index_at(xi, yi, zi)];
+        let i001 = self.lut[Palette::index_at(xi, yi, zi + 1)];
+        let i010 = self.lut[Palette::index_at(xi, yi + 1, zi)];
+        let i011 = self.lut[Palette::index_at(xi, yi + 1, zi + 1)];
+        let i100 = self.lut[Palette::index_at(xi + 1, yi, zi)];
+        let i101 = self.lut[Palette::index_at(xi + 1, yi, zi + 1)];
+        let i110 = self.lut[Palette::index_at(xi + 1, yi + 1, zi)];
+        let i111 = self.lut[Palette::index_at(xi + 1, yi + 1, zi + 1)];
+        let i00 = lerp(i000, i001, zf);
+        let i01 = lerp(i010, i011, zf);
+        let i10 = lerp(i100, i101, zf);
+        let i11 = lerp(i110, i111, zf);
+        let i0 = lerp(i00, i01, yf);
+        let i1 = lerp(i10, i11, yf);
+        let i = lerp(i0, i1, xf);
         // Rescale to -1...1.
         vec3a(i.x * 2.0 - 1.0, i.y * 2.0 - 1.0, i.z * 2.0 - 1.0)
     }
 
     fn get_code(&self) -> String {
         format!(
-            "palette({}, {:?}, {:?}, {:?}, {:?}, {})",
-            match self.space {
-                Space::HSL => "Space::HSL",
-                Space::HSV => "Space::HSV",
-            },
-            self.brightness,
-            self.hue_min,
-            self.hue_amount,
-            self.saturation,
+            "palette({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {})",
+            self.h1,
+            self.s1,
+            self.l1,
+            self.h2,
+            self.s2,
+            self.l2,
+            self.h3,
+            self.s3,
+            self.l3,
             self.texture.get_code()
         )
     }
     fn get_basis_code(&self) -> String {
         format!(
-            "palette({}, {:?}, {:?}, {:?}, {:?}, {})",
-            match self.space {
-                Space::HSL => "Space::HSL",
-                Space::HSV => "Space::HSV",
-            },
-            self.brightness,
-            self.hue_min,
-            self.hue_amount,
-            self.saturation,
+            "palette({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {})",
+            self.h1,
+            self.s1,
+            self.l1,
+            self.h2,
+            self.s2,
+            self.l2,
+            self.h3,
+            self.s3,
+            self.l3,
             self.texture.get_basis_code()
         )
     }

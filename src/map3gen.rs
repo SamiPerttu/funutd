@@ -91,16 +91,18 @@ pub fn genmap3palette_hasher<H: 'static + Hasher>(
     hasher: H,
     dna: &mut Dna,
 ) -> Box<dyn Texture> {
-    let space = match dna.index("color space", [(1.0, "Okhsl"), (1.0, "Okhsv")]) {
-        0 => Space::HSL,
-        _ => Space::HSV,
-    };
-    let brightness = dna.f32("brightness");
-    let hue_min = dna.f32_in("hue minimum", 0.0, 1.0);
-    let hue_amount = dna.f32_xform("hue width", |x| xerp(0.2, 1.0, x));
-    let saturation = dna.f32_in("saturation", 0.0, 1.0);
+    let h1 = dna.f32("hue 1");
+    let s1 = dna.f32("saturation 1");
+    let l1 = dna.f32_xform("lightness 1", sqrt);
+    let h2 = dna.f32("hue 2");
+    let s2 = dna.f32("saturation 2");
+    let l2 = dna.f32_xform("lightness 2", sqrt);
+    let h3 = dna.f32("hue 3");
+    let s3 = dna.f32("saturation 3");
+    let l3 = dna.f32_xform("lightness 3", sqrt);
     let map = genmap3_hasher(complexity, false, hasher, dna);
-    palette(space, brightness, hue_min, hue_amount, saturation, map)
+
+    palette(h1, s1, l1, h2, s2, l2, h3, s3, l3, map)
 }
 
 /// Generate a texture.
