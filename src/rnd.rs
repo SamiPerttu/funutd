@@ -269,56 +269,125 @@ impl Rnd {
     }
 
     /// Returns the next u64 in the inclusive range (min, max).
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.u64_in(14, 85)).min().unwrap(), 14);
+    /// assert_eq!((0..10000).map(|_| rnd.u64_in(3, 55)).max().unwrap(), 55);
+    /// ```
     #[inline]
     pub fn u64_in(&mut self, min: u64, max: u64) -> u64 {
         assert!(max >= min);
         let diff = max - min;
         if diff < u64::MAX {
-            self.u64() % (diff + 1)
+            (self.u64() % (diff + 1)).wrapping_add(min)
         } else {
             self.u64()
         }
     }
 
     /// Returns the next u32 in the inclusive range (min, max).
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.u32_in(5, 27)).min().unwrap(), 5);
+    /// assert_eq!((0..10000).map(|_| rnd.u32_in(9, 43)).max().unwrap(), 43);
+    /// ```
     #[inline]
     pub fn u32_in(&mut self, min: u32, max: u32) -> u32 {
         self.u64_in(min as u64, max as u64) as u32
     }
 
     /// Returns the next i64 in the inclusive range (min, max).
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.i64_in(-3, 13)).min().unwrap(), -3);
+    /// assert_eq!((0..10000).map(|_| rnd.i64_in(-25, 8)).max().unwrap(), 8);
+    /// ```
     #[inline]
     pub fn i64_in(&mut self, min: i64, max: i64) -> i64 {
-        self.u64_in(min as u64, max as u64) as i64
+        let range = (max as u64).wrapping_sub(min as u64);
+        if range == u64::MAX {
+            self.u64() as i64
+        } else {
+            (self.u64_in(0, range).wrapping_add(min as u64)) as i64
+        }
     }
 
     /// Returns the next i32 in the inclusive range (min, max).
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.i32_in(-31, 3)).min().unwrap(), -31);
+    /// assert_eq!((0..10000).map(|_| rnd.i32_in(-14, 9)).max().unwrap(), 9);
+    /// ```
     #[inline]
     pub fn i32_in(&mut self, min: i32, max: i32) -> i32 {
         self.i64_in(min as i64, max as i64) as i32
     }
 
-    /// Returns the next u64 in the left closed range [0, limit[.
+    /// Returns the next u64 in the left inclusive range [0, limit[.
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.u64_to(15)).min().unwrap(), 0);
+    /// assert_eq!((0..10000).map(|_| rnd.u64_to(61)).max().unwrap(), 60);
+    /// ```
     #[inline]
     pub fn u64_to(&mut self, limit: u64) -> u64 {
         assert!(limit > 0);
         self.u64_in(0, limit - 1)
     }
 
-    /// Returns the next u32 in the left closed range [0, limit[.
+    /// Returns the next u32 in the left inclusive range [0, limit[.
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.u32_to(11)).min().unwrap(), 0);
+    /// assert_eq!((0..10000).map(|_| rnd.u32_to(36)).max().unwrap(), 35);
+    /// ```
     #[inline]
     pub fn u32_to(&mut self, limit: u32) -> u32 {
         self.u64_to(limit as u64) as u32
     }
 
-    /// Returns the next i64 in the left closed range [0, limit[.
+    /// Returns the next i64 in the left inclusive range [0, limit[.
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.i64_to(48)).min().unwrap(), 0);
+    /// assert_eq!((0..10000).map(|_| rnd.i64_to(56)).max().unwrap(), 55);
+    /// ```
     #[inline]
     pub fn i64_to(&mut self, limit: i64) -> i64 {
         assert!(limit > 0);
         self.i64_in(0, limit - 1)
     }
 
-    /// Returns the next i32 in the left closed range [0, limit[.
+    /// Returns the next i32 in the left inclusive range [0, limit[.
+    ///
+    /// ### Example
+    /// ```
+    /// use funutd::*;
+    /// let mut rnd = Rnd::new();
+    /// assert_eq!((0..10000).map(|_| rnd.i32_to(15)).min().unwrap(), 0);
+    /// assert_eq!((0..10000).map(|_| rnd.i32_to(19)).max().unwrap(), 18);
+    /// ```
     #[inline]
     pub fn i32_to(&mut self, limit: i32) -> i32 {
         self.i64_to(limit as i64) as i32
