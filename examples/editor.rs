@@ -388,7 +388,6 @@ impl eframe::App for EditorApp {
                             );
                             encoder.set_color(png::ColorType::Rgb);
                             encoder.set_depth(png::BitDepth::Eight);
-                            encoder.set_trns(vec![0xFFu8, 0xFFu8, 0xFFu8, 0xFFu8]);
                             encoder.set_source_gamma(png::ScaledFloat::new(1.0 / 2.2));
 
                             let mut writer = encoder.write_header().unwrap();
