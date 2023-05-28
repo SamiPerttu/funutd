@@ -608,8 +608,7 @@ impl eframe::App for EditorApp {
                     }
                 }
                 if ui.button("Copy Code").clicked() {
-                    let mut clipboard = arboard::Clipboard::new().unwrap();
-                    clipboard.set_text(code.clone()).unwrap();
+                    ui.output_mut(|output| output.copied_text = code.clone());
                 }
                 if ui.button("Export PNG").clicked() {
                     self.is_exporting = !self.is_exporting;
