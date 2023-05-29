@@ -18,10 +18,8 @@ dyn-clone = "1.0.11"
 pixels = "0.12.1"
 winit = "0.28.6"
 winit_input_helper = "0.14.1"
-egui = "0.22.0"
-eframe = "0.22.0"
+eframe = { version = "0.22", default-features = false, features = ["default_fonts", "wgpu"] }
 rayon = "1.7.0"
-arboard = "3.2.0"
 rfd = "0.11.4"
 png = "0.17.8"
 
