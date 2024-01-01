@@ -234,7 +234,6 @@ impl Dna {
     /// Draw a parameter value. Adjusts current tree address.
     /// The value will be added to the genome if it is not there already.
     fn draw_value(&mut self, parameter_hash: u64) -> u32 {
-        *self.address.last_mut().unwrap() += 1;
         match self.genome.get(&parameter_hash) {
             Some(value) => *value,
             None => {
@@ -243,6 +242,11 @@ impl Dna {
                 value
             }
         }
+    }
+
+    /// Advance address to the next node.
+    fn advance(&mut self) {
+        *self.address.last_mut().unwrap() += 1;
     }
 
     /// Reset the Dna for subsequent generation.
@@ -267,6 +271,7 @@ impl Dna {
                 Vec::new(),
             );
         }
+        self.advance();
         value
     }
 
@@ -287,6 +292,7 @@ impl Dna {
                 Vec::new(),
             );
         }
+        self.advance();
         value + minimum
     }
 
@@ -307,6 +313,7 @@ impl Dna {
                 Vec::new(),
             );
         }
+        self.advance();
         value_f
     }
 
@@ -327,6 +334,7 @@ impl Dna {
                 Vec::new(),
             );
         }
+        self.advance();
         value_f
     }
 
@@ -347,6 +355,7 @@ impl Dna {
                 Vec::new(),
             );
         }
+        self.advance();
         value_f
     }
 
@@ -387,6 +396,7 @@ impl Dna {
                 c,
             );
         }
+        self.advance();
         choice_index as u32
     }
 
@@ -431,15 +441,74 @@ impl Dna {
                 c,
             );
         }
+        self.advance();
         choices[choice_index].2.clone()
     }
 
-    /// Call a subgenerator.
-    pub fn call<X, F: Fn(&mut Dna) -> X>(&mut self, f: F) -> X {
+    /// Descend one level in the tree. Must be matched with a later call to `ascend`.
+    pub fn descend(&mut self) {
         self.address.push(0);
-        let x = f(self);
+    }
+
+    /// Ascend one level in the tree. Must be matched with a preceding call to `descend`.
+    pub fn ascend(&mut self) {
         self.address.pop();
-        *self.address.last_mut().unwrap() += 1;
+        *self.address.last_mut().expect("Unmatched call to ascend") += 1;
+    }
+
+    /// Call a subgenerator.
+    pub fn generate<X, F: FnMut(&mut Dna) -> X>(&mut self, mut f: F) -> X {
+        self.descend();
+        let x = f(self);
+        self.ascend();
+        x
+    }
+
+    /// Chooses one of the subgenerators and calls it, returning the result.
+    #[allow(clippy::type_complexity)]
+    pub fn call<X: Clone, const T: usize>(
+        &mut self,
+        name: &str,
+        mut choices: [(f32, &str, Box<dyn FnMut(&mut Dna) -> X>); T],
+    ) -> X {
+        let hash = self.get_parameter_hash(name);
+        let value = self.draw_value(hash);
+        let choice_index = if (value as usize) < choices.len() && choices[value as usize].0 > 0.0 {
+            value as usize
+        } else {
+            let total_weight: f32 = choices.iter().map(|(weight, _, _)| weight).sum();
+            let mut value = value as f32 / ((1u64 << 32) as f32) * total_weight;
+            let mut choice_index = 0;
+            for (i, (weight, _, _)) in choices.iter().enumerate() {
+                value -= weight;
+                if value <= 0.0 {
+                    choice_index = i;
+                    break;
+                }
+            }
+            choice_index
+        };
+        if self.is_interactive() {
+            let mut c = Vec::new();
+            for (weight, name, _) in &choices {
+                if *weight > 0.0 {
+                    c.push((*name).into());
+                }
+            }
+            self.add_parameter(
+                ParameterKind::Categorical,
+                name.into(),
+                choices[choice_index].1.to_string(),
+                self.address.clone(),
+                choices.len() as u32 - 1,
+                choice_index as u32,
+                hash,
+                c,
+            );
+        }
+        self.descend();
+        let x = (choices[choice_index].2)(self);
+        self.ascend();
         x
     }
 }

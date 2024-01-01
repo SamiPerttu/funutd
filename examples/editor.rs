@@ -1,4 +1,4 @@
-//! Texture explorer GUI. WIP.
+//! Texture explorer GUI.
 
 // hide console window on Windows in release mode.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
@@ -240,8 +240,10 @@ fn main() {
         }
     });
 
+    let viewport = egui::ViewportBuilder::default().with_min_inner_size((1280.0, 640.0));
+
     let options = eframe::NativeOptions {
-        initial_window_size: Some((1280.0, 640.0).into()),
+        viewport,
         ..Default::default()
     };
 
@@ -365,12 +367,12 @@ impl EditorApp {
 }
 
 impl eframe::App for EditorApp {
-    fn on_close_event(&mut self) -> bool {
-        self.is_exiting = true;
-        self.can_exit
-    }
+    //fn on_close_event(&mut self) -> bool {
+    //    self.is_exiting = true;
+    //    self.can_exit
+    //}
 
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         while let Ok(message) = self.rx_image.try_recv() {
             if message.slot == EXPORT_SLOT {
                 if self.export_in_progress {
@@ -419,7 +421,9 @@ impl eframe::App for EditorApp {
         egui::SidePanel::left("mosaic panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if let Some(image) = self.slot[0].image.clone() {
-                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
+                    let image: egui::Image = (&image).into();
+                    let image = image.fit_to_exact_size((240.0, 240.0).into());
+                    let button = egui::ImageButton::new(image);
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(0);
@@ -429,7 +433,9 @@ impl eframe::App for EditorApp {
                     }
                 }
                 if let Some(image) = self.slot[1].image.clone() {
-                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
+                    let image: egui::Image = (&image).into();
+                    let image = image.fit_to_exact_size((240.0, 240.0).into());
+                    let button = egui::ImageButton::new(image);
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(1);
@@ -441,7 +447,9 @@ impl eframe::App for EditorApp {
             });
             ui.horizontal(|ui| {
                 if let Some(image) = self.slot[2].image.clone() {
-                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
+                    let image: egui::Image = (&image).into();
+                    let image = image.fit_to_exact_size((240.0, 240.0).into());
+                    let button = egui::ImageButton::new(image);
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(2);
@@ -451,7 +459,9 @@ impl eframe::App for EditorApp {
                     }
                 }
                 if let Some(image) = self.slot[3].image.clone() {
-                    let button = egui::ImageButton::new(&image, (240.0, 240.0));
+                    let image: egui::Image = (&image).into();
+                    let image = image.fit_to_exact_size((240.0, 240.0).into());
+                    let button = egui::ImageButton::new(image);
                     let response = ui.add(button);
                     if response.clicked() {
                         self.mutate(3);
@@ -586,7 +596,9 @@ impl eframe::App for EditorApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Some(image) = self.slot[self.focus_slot].image.clone() {
-                let button = egui::ImageButton::new(&image, (480.0, 480.0));
+                let image: egui::Image = (&image).into();
+                let image = image.fit_to_exact_size((480.0, 480.0).into());
+                let button = egui::ImageButton::new(image);
                 if ui.add(button).clicked() {
                     self.mutate(self.focus_slot);
                 }
@@ -678,7 +690,7 @@ impl eframe::App for EditorApp {
 
                         if ui.button("Yes").clicked() {
                             self.can_exit = true;
-                            frame.close();
+                            //frame.close();
                         }
                     });
                 });
