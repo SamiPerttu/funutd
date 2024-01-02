@@ -159,6 +159,7 @@ impl Dna {
         Some((preamble, dna))
     }
 
+    /// Save Dna to the path.
     pub fn save(&self, path: &std::path::Path, preamble: &str) -> std::io::Result<()> {
         let mut file = std::fs::File::create(path)?;
         file.write_all(preamble.as_bytes())?;
@@ -445,22 +446,26 @@ impl Dna {
         choices[choice_index].2.clone()
     }
 
-    /// Descend one level in the tree. Must be matched with a later call to `ascend`.
-    pub fn descend(&mut self) {
+    /// Start a new group (branch) of parameters under the previously drawn parameter.
+    /// Must be matched with a later call to `ungroup`.
+    pub fn group(&mut self) {
+        *self.address.last_mut().expect("Unmatched call to group") -= 1;
         self.address.push(0);
     }
 
-    /// Ascend one level in the tree. Must be matched with a preceding call to `descend`.
-    pub fn ascend(&mut self) {
+    /// End a previously started group. Must be matched with a preceding call to `group`.
+    pub fn ungroup(&mut self) {
         self.address.pop();
-        *self.address.last_mut().expect("Unmatched call to ascend") += 1;
+        *self.address.last_mut().expect("Unmatched call to ungroup") += 1;
     }
 
-    /// Call a subgenerator.
+    /// Call a subgenerator. The subgenerator starts a new branch
+    /// without a parent parameter.
     pub fn generate<X, F: FnMut(&mut Dna) -> X>(&mut self, mut f: F) -> X {
-        self.descend();
+        *self.address.last_mut().unwrap() += 1;
+        self.group();
         let x = f(self);
-        self.ascend();
+        self.ungroup();
         x
     }
 
@@ -506,9 +511,10 @@ impl Dna {
                 c,
             );
         }
-        self.descend();
+        self.advance();
+        self.group();
         let x = (choices[choice_index].2)(self);
-        self.ascend();
+        self.ungroup();
         x
     }
 }

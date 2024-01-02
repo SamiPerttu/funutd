@@ -750,6 +750,9 @@ impl eframe::App for EditorApp {
                                 .is_ok()
                             {}
                         }
+                        if ui.add(egui::Button::new("Close")).clicked() {
+                            self.is_exporting = !self.is_exporting;
+                        }
                         if self.export_in_progress {
                             let bar = egui::ProgressBar::new(
                                 self.export_rows as f32 / self.export_size as f32,
