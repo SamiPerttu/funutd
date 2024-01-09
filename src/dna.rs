@@ -13,12 +13,13 @@ pub enum ParameterKind {
     Ordered,
 }
 
-/// Dna parameter. These are recorded for interactive purposes.
+/// Dna parameter. These are recorded for interactive and optimization purposes.
 #[derive(Clone)]
 pub struct Parameter {
     kind: ParameterKind,
     name: String,
     value: String,
+    value_f32: Option<f32>,
     address: Vec<u32>,
     maximum: u32,
     raw: u32,
@@ -27,10 +28,12 @@ pub struct Parameter {
 }
 
 impl Parameter {
+    /// Create a new `Parameter`.
     pub fn new(
         kind: ParameterKind,
         name: String,
         value: String,
+        value_f32: Option<f32>,
         address: Vec<u32>,
         maximum: u32,
         raw: u32,
@@ -41,6 +44,7 @@ impl Parameter {
             kind,
             name,
             value,
+            value_f32,
             address,
             maximum,
             raw,
@@ -48,30 +52,43 @@ impl Parameter {
             choices,
         }
     }
+    /// Parameter kind.
     pub fn kind(&self) -> ParameterKind {
         self.kind
     }
+    /// Name of the parameter.
     pub fn name(&self) -> &String {
         &self.name
     }
+    /// Value of the parameter.
     pub fn value(&self) -> &String {
         &self.value
     }
+    /// Floating point value of the parameter, if applicable.
+    pub fn value_f32(&self) -> Option<f32> {
+        self.value_f32
+    }
+    /// Address in the parameter tree where this parameter was drawn.
     pub fn address(&self) -> &Vec<u32> {
         &self.address
     }
+    /// Raw maximum value of the parameter.
     pub fn maximum(&self) -> u32 {
         self.maximum
     }
+    /// Raw maximum value of the parameter as an `f32`.
     pub fn maximum_f32(&self) -> f32 {
         self.maximum as f32
     }
+    /// Raw parameter value.
     pub fn raw(&self) -> u32 {
         self.raw
     }
+    /// Hash of the parameter address and name.
     pub fn hash(&self) -> u64 {
         self.hash
     }
+    /// Possible choices for the values, if applicable.
     pub fn choices(&self) -> &Vec<String> {
         &self.choices
     }
@@ -129,8 +146,18 @@ impl Dna {
         self.interactive = interactive;
     }
 
+    /// Number of parameters drawn from the `Dna`.
+    pub fn parameters(&self) -> usize {
+        self.parameters.len()
+    }
+
     /// Parameter accessor.
-    pub fn parameters(&self) -> &Vec<Parameter> {
+    pub fn parameter(&self, i: usize) -> &Parameter {
+        &self.parameters[i]
+    }
+
+    /// Parameter vector accessor.
+    pub fn parameter_vector(&self) -> &Vec<Parameter> {
         &self.parameters
     }
 
@@ -169,13 +196,40 @@ impl Dna {
         Ok(())
     }
 
-    /// Mutate the source Dna.
+    /// Mutate the source Dna. Return the mutated Dna.
+    /// The probability of mutating each parameter is `mutation_p`.
     pub fn mutate(source: &Dna, seed: u64, mutation_p: f32) -> Dna {
         let mut rnd = Rnd::from_u64(seed);
         let mut dna = Dna::new(rnd.u64());
-        for (parameter_hash, source_value) in source.genome.iter() {
-            if rnd.f32() >= mutation_p {
-                dna.set_value(*parameter_hash, *source_value);
+        if source.is_interactive() {
+            for parameter in source.parameter_vector() {
+                if rnd.f32() < mutation_p {
+                    if matches!(parameter.kind(), ParameterKind::Ordered) {
+                        let adjust = if rnd.bool(0.5) {
+                            xerp(
+                                1.0,
+                                max(1.0, parameter.maximum() as f64 - parameter.raw() as f64),
+                                rnd.f64(),
+                            )
+                        } else {
+                            -xerp(1.0, max(1.0, parameter.raw() as f64), rnd.f64())
+                        };
+                        let value = clamp(
+                            0.0,
+                            parameter.maximum() as f64,
+                            parameter.raw() as f64 + adjust,
+                        );
+                        dna.set_value(parameter.hash(), value.round() as u32);
+                    }
+                } else {
+                    dna.set_value(parameter.hash(), parameter.raw());
+                }
+            }
+        } else {
+            for (parameter_hash, source_value) in source.genome.iter() {
+                if rnd.f32() >= mutation_p {
+                    dna.set_value(*parameter_hash, *source_value);
+                }
             }
         }
         dna
@@ -183,11 +237,12 @@ impl Dna {
 
     /// Finetune the source Dna by only modifying non-structural parameters.
     /// Requires interactive mode.
+    /// The probability of mutating each parameter is `mutation_p`.
     pub fn finetune(source: &Dna, seed: u64, mutation_p: f32) -> Dna {
         assert!(source.is_interactive());
         let mut rnd = Rnd::from_u64(seed);
         let mut dna = Dna::new(rnd.u64());
-        for parameter in source.parameters() {
+        for parameter in source.parameter_vector() {
             if !parameter.choices().is_empty() || rnd.f32() >= mutation_p {
                 dna.set_value(parameter.hash(), parameter.raw());
             }
@@ -201,6 +256,7 @@ impl Dna {
         kind: ParameterKind,
         name: String,
         value: String,
+        value_f32: Option<f32>,
         address: Vec<u32>,
         maximum: u32,
         raw: u32,
@@ -208,7 +264,7 @@ impl Dna {
         choices: Vec<String>,
     ) {
         self.parameters.push(Parameter::new(
-            kind, name, value, address, maximum, raw, hash, choices,
+            kind, name, value, value_f32, address, maximum, raw, hash, choices,
         ));
     }
 
@@ -265,6 +321,7 @@ impl Dna {
                 ParameterKind::Categorical,
                 name.into(),
                 format!("{:?}", value),
+                None,
                 self.address.clone(),
                 0xffffffff,
                 value,
@@ -286,6 +343,7 @@ impl Dna {
                 ParameterKind::Categorical,
                 name.into(),
                 format!("{:?}", value + minimum),
+                None,
                 self.address.clone(),
                 maximum - minimum,
                 value,
@@ -307,6 +365,7 @@ impl Dna {
                 ParameterKind::Ordered,
                 name.into(),
                 format!("{0:.3}", value_f),
+                Some(value_f),
                 self.address.clone(),
                 0xffffffff,
                 value,
@@ -322,12 +381,13 @@ impl Dna {
     pub fn f32_in(&mut self, name: &str, minimum: f32, maximum: f32) -> f32 {
         let hash = self.get_parameter_hash(name);
         let value = self.draw_value(hash);
-        let value_f = lerp(minimum, maximum, value as f32 / ((1u64 << 32) as f32));
+        let value_f = lerp(minimum, maximum, value as f32 / (((1u64 << 32) - 1) as f32));
         if self.is_interactive() {
             self.add_parameter(
                 ParameterKind::Ordered,
                 name.into(),
                 format!("{0:.3}", value_f),
+                Some(value_f),
                 self.address.clone(),
                 0xffffffff,
                 value,
@@ -349,6 +409,7 @@ impl Dna {
                 ParameterKind::Ordered,
                 name.into(),
                 format!("{0:.3}", value_f),
+                Some(value_f),
                 self.address.clone(),
                 0xffffffff,
                 value,
@@ -390,6 +451,7 @@ impl Dna {
                 ParameterKind::Categorical,
                 name.into(),
                 choices[choice_index].1.to_string(),
+                None,
                 self.address.clone(),
                 choices.len() as u32 - 1,
                 choice_index as u32,
@@ -435,6 +497,7 @@ impl Dna {
                 ParameterKind::Categorical,
                 name.into(),
                 choices[choice_index].1.to_string(),
+                None,
                 self.address.clone(),
                 choices.len() as u32 - 1,
                 choice_index as u32,
@@ -504,6 +567,7 @@ impl Dna {
                 ParameterKind::Categorical,
                 name.into(),
                 choices[choice_index].1.to_string(),
+                None,
                 self.address.clone(),
                 choices.len() as u32 - 1,
                 choice_index as u32,

@@ -497,7 +497,7 @@ impl eframe::App for EditorApp {
         egui::SidePanel::right("parameter editor").show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 let dna = self.slot[self.focus_slot].dna.clone();
-                for parameter in dna.parameters() {
+                for parameter in dna.parameter_vector() {
                     ui.horizontal(|ui| {
                         if !parameter.choices().is_empty() {
                             ui.push_id(id, |ui| {
