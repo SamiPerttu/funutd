@@ -11,7 +11,7 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-glam = "0.27.0"
+glam = { version = "0.27.0", default-features = false, features = ["libm"] }
 dyn-clone = "1.0.17"
 hashbrown = "0.14.3"
 
