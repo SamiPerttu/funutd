@@ -6,6 +6,8 @@ use super::hash::*;
 use super::map3base::*;
 use super::math::*;
 use super::*;
+extern crate alloc;
+use alloc::{boxed::Box, string::String};
 
 pub fn voronoi_pattern(i: usize, v: Vec3a) -> f32 {
     debug_assert!(i < 26);

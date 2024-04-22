@@ -2,10 +2,13 @@
 
 use super::math::*;
 use super::*;
-use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
+use hashbrown::HashMap;
+use hashbrown::hash_map::DefaultHashBuilder;
+use core::hash::{Hash, Hasher, BuildHasher};
+#[cfg(feature = "std")]
 use std::io::prelude::*;
+extern crate alloc;
+use alloc::{boxed::Box, string::String, string::ToString, vec::Vec};
 
 #[derive(Clone, Copy)]
 pub enum ParameterKind {
@@ -162,8 +165,9 @@ impl Dna {
     }
 
     /// Attempt to load Dna from the path.
+    #[cfg(feature = "std")]
     pub fn load(path: &std::path::Path) -> Option<(String, Dna)> {
-        let mut dna = Dna::new(Rnd::from_time().u64());
+        let mut dna = Dna::new(0);
         let mut is_first_line = true;
         let mut preamble: String = String::new();
         if let Ok(markup) = std::fs::read_to_string(path) {
@@ -187,6 +191,7 @@ impl Dna {
     }
 
     /// Save Dna to the path.
+    #[cfg(feature = "std")]
     pub fn save(&self, path: &std::path::Path, preamble: &str) -> std::io::Result<()> {
         let mut file = std::fs::File::create(path)?;
         file.write_all(preamble.as_bytes())?;
@@ -281,9 +286,10 @@ impl Dna {
     }
 
     /// Calculate a parameter hash based on our tree location and parameter name.
+    #[allow(clippy::manual_hash_one)]
     fn get_parameter_hash(&self, parameter_name: &str) -> u64 {
         let address_hash = self.get_address_hash();
-        let mut hasher = DefaultHasher::new();
+        let mut hasher = DefaultHashBuilder::default().build_hasher();
         parameter_name.hash(&mut hasher);
         hasher.finish() ^ address_hash
     }

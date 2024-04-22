@@ -10,6 +10,8 @@ use super::math::*;
 use super::noise::*;
 use super::voronoi::*;
 use super::*;
+extern crate alloc;
+use alloc::boxed::Box;
 
 /// Generate a distance metric.
 pub fn gen_metric(dna: &mut Dna, name: &str) -> Distance {

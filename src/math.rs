@@ -1,8 +1,8 @@
 //! Math traits and functions.
 
-use std::cmp::PartialEq;
-use std::ops::{Add, Div, Mul, Neg, Sub};
-use std::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};
+use core::cmp::PartialEq;
+use core::ops::{Add, Div, Mul, Neg, Sub};
+use core::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};
 
 pub trait Num:
     Copy + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self>
@@ -67,8 +67,8 @@ macro_rules! impl_signed_num {
         #[inline] fn from_f32(x: f32) -> Self { x as Self }
         #[inline] fn abs(self) -> Self { <$t>::abs(self) }
         #[inline] fn signum(self) -> Self { self.signum() }
-        #[inline] fn min(self, other: Self) -> Self { std::cmp::min(self, other) }
-        #[inline] fn max(self, other: Self) -> Self { std::cmp::max(self, other) }
+        #[inline] fn min(self, other: Self) -> Self { core::cmp::min(self, other) }
+        #[inline] fn max(self, other: Self) -> Self { core::cmp::max(self, other) }
         #[inline] fn pow(self, other: Self) -> Self { <$t>::pow(self, other as u32) }
         #[inline] fn floor(self) -> Self { self }
         #[inline] fn ceil(self) -> Self { self }
@@ -89,8 +89,8 @@ macro_rules! impl_unsigned_num {
         #[inline] fn from_f32(x: f32) -> Self { x as Self }
         #[inline] fn abs(self) -> Self { self }
         #[inline] fn signum(self) -> Self { 1 }
-        #[inline] fn min(self, other: Self) -> Self { std::cmp::min(self, other) }
-        #[inline] fn max(self, other: Self) -> Self { std::cmp::max(self, other) }
+        #[inline] fn min(self, other: Self) -> Self { core::cmp::min(self, other) }
+        #[inline] fn max(self, other: Self) -> Self { core::cmp::max(self, other) }
         #[inline] fn pow(self, other: Self) -> Self { <$t>::pow(self, other as u32) }
         #[inline] fn floor(self) -> Self { self }
         #[inline] fn ceil(self) -> Self { self }

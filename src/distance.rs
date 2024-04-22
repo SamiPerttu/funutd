@@ -2,6 +2,8 @@
 
 use super::math::*;
 use super::*;
+extern crate alloc;
+use alloc::string::String;
 
 #[derive(Debug, Clone)]
 pub enum Distance {

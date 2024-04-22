@@ -5,6 +5,8 @@ use super::hash::*;
 use super::map3base::*;
 use super::math::*;
 use super::*;
+extern crate alloc;
+use alloc::{boxed::Box, string::String, string::ToString};
 
 /// Zero texture.
 #[derive(Clone)]

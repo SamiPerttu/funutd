@@ -15,6 +15,7 @@ This is an alpha version undergoing rapid development and may contain rough edge
 * Isotropic value noise, isotropic gradient noise and Voronoi bases
 * Palette generation with Okhsv and Okhsl color spaces
 * Interactive texture explorer (in the example `editor`)
+* `no_std` support (enable by disabling the `std` feature)
 
 ## Basics
 

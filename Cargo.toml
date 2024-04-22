@@ -3,7 +3,7 @@ name = "funutd"
 description = "Procedural texture library."
 keywords = ["graphics", "noise", "texture"]
 license = "MIT OR Apache-2.0"
-version = "0.14.0"
+version = "0.15.0"
 authors = ["SamiPerttu <Sami.Perttu@gmail.com>"]
 homepage = "https://github.com/SamiPerttu/funutd"
 repository = "https://github.com/SamiPerttu/funutd"
@@ -11,16 +11,21 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-glam = "0.25.0"
-dyn-clone = "1.0.16"
+glam = "0.27.0"
+dyn-clone = "1.0.17"
+hashbrown = "0.14.3"
 
 [dev-dependencies]
-winit = "0.29.9"
-winit_input_helper = "0.15.1"
-eframe = { version = "0.25.0", default-features = false, features = ["default_fonts", "wgpu"] }
-rayon = "1.8.0"
-rfd = "0.12.1"
-png = "0.17.10"
+winit = "0.29.15"
+winit_input_helper = "0.16.0"
+eframe = { version = "0.27.2", default-features = false, features = ["default_fonts", "wgpu"] }
+rayon = "1.10.0"
+rfd = "0.14.1"
+png = "0.17.13"
+
+[features]
+default = ["std"]
+std = []
 
 [[example]]
 name = "editor"

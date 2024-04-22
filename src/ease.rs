@@ -1,5 +1,7 @@
 //! Easing functions.
 use super::math::*;
+extern crate alloc;
+use alloc::string::String;
 
 #[derive(Debug, Clone)]
 pub enum Ease {

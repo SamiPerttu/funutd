@@ -4,6 +4,8 @@ use super::hash::*;
 use super::math::*;
 use super::*;
 use dyn_clone::DynClone;
+extern crate alloc;
+use alloc::string::String;
 
 /// Bases attach a feature grid to a queried point.
 /// Once attached, the grid is resolution independent:

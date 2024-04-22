@@ -29,8 +29,11 @@ impl Row {
     }
 }
 
+/// Number of render slots.
 const SLOTS: usize = 5;
+/// Number of render slots shown on-screen.
 const VISIBLE_SLOTS: usize = 4;
+/// Index of the export render slot.
 const EXPORT_SLOT: usize = 4;
 
 struct ImageMessage {
@@ -703,7 +706,7 @@ impl eframe::App for EditorApp {
                 .show(ctx, |ui| {
                     let mut export_size = self.export_size as f32;
                     let response = ui.add(
-                        egui::Slider::new(&mut export_size, 512.0..=8192.0)
+                        egui::Slider::new(&mut export_size, 512.0..=16384.0)
                             .show_value(true)
                             .text("Size In Pixels"),
                     );

@@ -174,6 +174,7 @@ impl Rnd {
 
     /// Creates a new Krull64, randomizing the 64-bit stream number
     /// from system time. Stream position is set to 0.
+    #[cfg(feature = "std")]
     pub fn from_time() -> Self {
         let start = std::time::SystemTime::now();
         let since_epoch = start

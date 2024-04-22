@@ -3,6 +3,8 @@
 use super::map3base::*;
 use super::math::*;
 use super::*;
+extern crate alloc;
+use alloc::{boxed::Box, string::String, vec::Vec};
 
 // Okhsv and Okhsl conversions in this file are based on code by Björn Ottosson.
 // Here is the original copyright notice:
@@ -192,9 +194,9 @@ fn find_gamut_intersection(
                 let u_b = b1 / (b1 * b1 - 0.5 * b * b2);
                 let t_b = -b * u_b;
 
-                let t_r = if u_r >= 0.0 { t_r } else { std::f32::INFINITY };
-                let t_g = if u_g >= 0.0 { t_g } else { std::f32::INFINITY };
-                let t_b = if u_b >= 0.0 { t_b } else { std::f32::INFINITY };
+                let t_r = if u_r >= 0.0 { t_r } else { core::f32::INFINITY };
+                let t_g = if u_g >= 0.0 { t_g } else { core::f32::INFINITY };
+                let t_b = if u_b >= 0.0 { t_b } else { core::f32::INFINITY };
 
                 t + min(t_r, min(t_g, t_b))
             }
@@ -274,8 +276,8 @@ pub fn okhsl_to_srgb(h: f32, s: f32, l: f32) -> (f32, f32, f32) {
         return (0.0, 0.0, 0.0);
     }
 
-    let a_ = cos(2.0 * std::f32::consts::PI * h);
-    let b_ = sin(2.0 * std::f32::consts::PI * h);
+    let a_ = cos(2.0 * core::f32::consts::PI * h);
+    let b_ = sin(2.0 * core::f32::consts::PI * h);
 
     let k_1 = 0.206;
     let k_2 = 0.03;
@@ -315,8 +317,8 @@ pub fn okhsl_to_srgb(h: f32, s: f32, l: f32) -> (f32, f32, f32) {
 }
 
 pub fn okhsv_to_srgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
-    let a_ = cos(2.0 * std::f32::consts::PI * h);
-    let b_ = sin(2.0 * std::f32::consts::PI * h);
+    let a_ = cos(2.0 * core::f32::consts::PI * h);
+    let b_ = sin(2.0 * core::f32::consts::PI * h);
 
     let (cusp_L, cusp_C) = find_cusp(a_, b_);
     let (S_max, T_max) = to_st(cusp_L, cusp_C);
@@ -381,7 +383,7 @@ pub fn cartesian_to_cylindrical(x: f32, y: f32, z: f32) -> (f32, f32, f32) {
     let angle = y.atan2(x);
     let r = sqrt(squared(x) + squared(y)).min(1.0);
     (
-        angle / std::f32::consts::TAU + 0.5,
+        angle / core::f32::consts::TAU + 0.5,
         r,
         clamp01(z * 0.5 + 0.5),
     )
@@ -391,8 +393,8 @@ pub fn cartesian_to_cylindrical(x: f32, y: f32, z: f32) -> (f32, f32, f32) {
 /// to Cartesian coordinates in [-1, 1] for each component.
 pub fn hsl_to_xyz(h: f32, s: f32, l: f32) -> (f32, f32, f32) {
     (
-        cos(h * std::f32::consts::TAU) * l,
-        sin(h * std::f32::consts::TAU) * l,
+        cos(h * core::f32::consts::TAU) * l,
+        sin(h * core::f32::consts::TAU) * l,
         s * 2.0 - 1.0,
     )
 }

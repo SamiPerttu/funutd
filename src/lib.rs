@@ -1,4 +1,7 @@
 //! FunUTD is a 3-D procedural texture library.
+#![cfg_attr(not(feature = "std"), no_std)]
+#[macro_use]
+extern crate alloc;
 
 #[allow(non_snake_case)]
 #[allow(clippy::excessive_precision)]
