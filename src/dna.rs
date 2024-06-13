@@ -2,9 +2,9 @@
 
 use super::math::*;
 use super::*;
-use hashbrown::HashMap;
+use core::hash::{BuildHasher, Hash, Hasher};
 use hashbrown::hash_map::DefaultHashBuilder;
-use core::hash::{Hash, Hasher, BuildHasher};
+use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::io::prelude::*;
 extern crate alloc;

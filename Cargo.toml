@@ -11,12 +11,13 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-glam = { version = "0.27.0", default-features = false, features = ["libm"] }
+glam = { version = "0.28.0", default-features = false, features = ["libm"] }
 dyn-clone = "1.0.17"
-hashbrown = "0.14.3"
+hashbrown = "0.14.5"
+libm = "0.2.8"
 
 [dev-dependencies]
-winit = "0.29.15"
+winit = "0.30.1"
 winit_input_helper = "0.16.0"
 eframe = { version = "0.27.2", default-features = false, features = ["default_fonts", "wgpu"] }
 rayon = "1.10.0"

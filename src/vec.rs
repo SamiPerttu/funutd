@@ -8,7 +8,6 @@ macro_rules! impl_vec32_num {
         #[inline] fn zero() -> Self { <$t>::ZERO }
         #[inline] fn one() -> Self { <$t>::ONE }
         #[inline] fn new(x: i64) -> Self { <$t>::splat(x as f32) }
-        #[inline] fn from_u64(x: u64) -> Self { <$t>::splat(x as f32) }
         #[inline] fn from_f64(x: f64) -> Self { <$t>::splat(x as f32) }
         #[inline] fn from_f32(x: f32) -> Self { <$t>::splat(x) }
         #[inline] fn abs(self) -> Self { <$t>::abs(self) }
@@ -30,7 +29,6 @@ macro_rules! impl_vec64_num {
         #[inline] fn zero() -> Self { <$t>::ZERO }
         #[inline] fn one() -> Self { <$t>::ONE }
         #[inline] fn new(x: i64) -> Self { <$t>::splat(x as f64) }
-        #[inline] fn from_u64(x: u64) -> Self { <$t>::splat(x as f64) }
         #[inline] fn from_f64(x: f64) -> Self { <$t>::splat(x) }
         #[inline] fn from_f32(x: f32) -> Self { <$t>::splat(x as f64) }
         #[inline] fn abs(self) -> Self { <$t>::abs(self) }

@@ -623,7 +623,7 @@ impl eframe::App for EditorApp {
                     }
                 }
                 if ui.button("Copy Code").clicked() {
-                    ui.output_mut(|output| output.copied_text = code.clone());
+                    ui.output_mut(|output| output.copied_text.clone_from(&code));
                 }
                 if ui.button("Export PNG").clicked() {
                     self.is_exporting = !self.is_exporting;

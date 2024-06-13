@@ -380,7 +380,7 @@ pub struct Palette {
 /// Convert from Cartesian coordinates in [-1, 1] for each component
 /// to cylindrical coordinates (angle, r, z) in [0, 1] for each component.
 pub fn cartesian_to_cylindrical(x: f32, y: f32, z: f32) -> (f32, f32, f32) {
-    let angle = y.atan2(x);
+    let angle = libm::atan2f(y, x);
     let r = sqrt(squared(x) + squared(y)).min(1.0);
     (
         angle / core::f32::consts::TAU + 0.5,
